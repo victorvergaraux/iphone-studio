@@ -92,8 +92,17 @@ export const gradePass = new ShaderPass({
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse; uniform float uBrightness, uContrast, uVignette, uGrain, uTime, uAlpha; uniform vec2 uRes;
     varying vec2 vUv;
-    // hash 2D barato → ruido blanco para el grano de película
-    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    // Grano: hash entero de 32 bits (lowbias32) ENCADENADO sobre x, y, cuadro y canal. Encadenar (en vez de hashear un
+    // vector entero de golpe) rompe la estructura lineal x/y que se veía como líneas diagonales.
+    uint mix32(uint x){ x ^= x >> 16u; x *= 0x7feb352du; x ^= x >> 15u; x *= 0x846ca68bu; x ^= x >> 16u; return x; }
+    float hash1(uvec2 p, uint fr, uint ch){
+      uint h = mix32(p.x + 0x9e3779b9u * (ch + 1u));
+      h = mix32(h ^ (p.y + 0x85ebca6bu));
+      h = mix32(h ^ (fr * 0xc2b2ae35u + ch));
+      return float(h >> 8u) * (1.0 / 16777215.0);                  // 24 bits exactos en un float → 0..1
+    }
+    // Ruido gaussiano ≈ suma de 3 uniformes (Irwin-Hall), centrado en 0 y con σ≈0.5. Más colas que un triangular → granos sueltos.
+    float gauss(uvec2 p, uint fr, uint ch){ return hash1(p, fr, ch * 3u) + hash1(p, fr, ch * 3u + 1u) + hash1(p, fr, ch * 3u + 2u) - 1.5; }
     void main(){
       vec4 src = texture2D(tDiffuse, vUv);
       vec3 c = src.rgb;
@@ -101,7 +110,19 @@ export const gradePass = new ShaderPass({
       c = (c - 0.5) * uContrast + 0.5;          // contraste: escala alrededor del gris medio
       float d = distance(vUv, vec2(0.5));
       c *= 1.0 - uVignette * smoothstep(0.35, 0.85, d); // viñeta suave en esquinas
-      c += (hash(vUv * uRes + fract(uTime)) - 0.5) * uGrain; // grano animado por frame
+      // Grano en 2 escalas: fino (1 px) + grumo (~2 px, medio tono). El desplazamiento aleatorio por cuadro evita que el
+      // patrón se alinee con la rejilla de píxeles (moiré/diagonales) cuando el canvas se escala por CSS.
+      uint fr = uint(floor(uTime * 24.0));                          // 24 cuadros de grano por segundo
+      uvec2 px = uvec2(gl_FragCoord.xy);
+      uvec2 off = uvec2(hash1(uvec2(7u, 3u), fr, 9u) * 1024.0, hash1(uvec2(5u, 11u), fr, 8u) * 1024.0);
+      uvec2 pc = (px + off) / 2u;                                   // celdas de 2×2 px
+      vec3 fine  = vec3(gauss(px + off, fr, 0u), gauss(px + off, fr, 1u), gauss(px + off, fr, 2u));
+      vec3 coarse = vec3(gauss(pc, fr, 3u), gauss(pc, fr, 4u), gauss(pc, fr, 5u));
+      vec3 g = (fine + 0.6 * coarse) * 1.5;                         // rango ≈ -2..2, σ ≈ 0.9 (más ruidoso que antes)
+      g = mix(vec3(g.g), g, 0.35);                                  // 65 % monocromo (película) + 35 % croma
+      float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
+      float w = 1.0 - 0.55 * pow(abs(luma * 2.0 - 1.0), 2.0);      // más grano en medios tonos, menos en negros/blancos
+      c += g * w * uGrain;
       // uAlpha = 1 solo en export transparente: conserva el alfa de la escena y premultiplica (el canvas usa premultipliedAlpha)
       float a = mix(1.0, clamp(src.a, 0.0, 1.0), uAlpha);
       gl_FragColor = vec4(clamp(c, 0.0, 1.0) * a, a);

@@ -11,7 +11,7 @@ export const P = {
   anim:  { type:'none', amp:1, speed:1 },
   cam:   { fov:10, zoom:1, ease:'expo.inOut', flyDur:1.8, drift: reduced ? 0 : 0.35, driftSpeed:0.6 },
   car:   { mode:'rtl', transition:0.85, fadeDur:1.2, hold:2.6, scrollDelay:0.6, parallax:0.38, autoplay:true, exposure:1.0, screenBg:'#0b0b0b' },
-  grade: { brightness:0, contrast:1, vignette:0.12, grain:0.025 },
+  grade: { brightness:0, contrast:1, vignette:0.12, grain:0 },
   shots: { preset:'producto', transition:0, hold:3, loop:true, randomHalf:false, halfCount:1 },
   exp:   { format:'Pantalla', long:1920, length:15, mbps:16, fps:30, pngScale:2, playShots:true, mode:'offline', container:'auto', transparent:false, shadowOpacity:0.45 },
 };
