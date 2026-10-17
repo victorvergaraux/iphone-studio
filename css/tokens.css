@@ -1,0 +1,42 @@
+/* Design tokens: paleta, tipografía, movimiento y tema de Tweakpane. Sin reglas de layout. */
+:root{
+  --paper:#ebeae6;      /* fondo de la app, gris cálido */
+  --paper-2:#f5f4f1;    /* superficies elevadas */
+  --ink:#121211;        /* texto y bordes duros */
+  --mute:#6f6d67;       /* secundarios */
+  --line:#cdcac3;       /* filetes */
+  --accent:#d6ff3d;     /* chartreuse, solo estados activos */
+  --rec:#ff3b1f;        /* grabación */
+  --f-display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease:cubic-bezier(.87,0,.13,1); /* expo.inOut */
+  --dur:850ms;
+  color-scheme:light;
+
+  /* Tweakpane theme */
+  --panel-a:0.1;  /* opacidad de fondo de los paneles (control temporal) */
+  --panel-blur:18px; /* desenfoque detrás de los paneles (control temporal) */
+  --tp-base-background-color:transparent;
+  --tp-base-shadow-color:transparent;
+  --tp-base-font-family:var(--f-mono);
+  /* Grises neutros (sin tinte cálido). Fondos de controles con alfa → funcionan sobre el panel translúcido */
+  --tp-button-background-color:#3a3a3a;
+  --tp-button-background-color-active:#1f1f1f;
+  --tp-button-background-color-focus:#4a4a4a;
+  --tp-button-background-color-hover:#4a4a4a;
+  --tp-button-foreground-color:#f2f2f2;
+  --tp-container-background-color:color-mix(in srgb,#dcdcdc calc(var(--panel-a) * 100%),rgba(128,128,128,.12));
+  --tp-container-background-color-active:rgba(128,128,128,.30);
+  --tp-container-background-color-focus:rgba(128,128,128,.24);
+  --tp-container-background-color-hover:rgba(128,128,128,.24);
+  --tp-container-foreground-color:#1e1e1e;
+  --tp-groove-foreground-color:rgba(128,128,128,.28);
+  --tp-input-background-color:rgba(128,128,128,.14);
+  --tp-input-background-color-active:rgba(128,128,128,.26);
+  --tp-input-background-color-focus:rgba(128,128,128,.22);
+  --tp-input-background-color-hover:rgba(128,128,128,.20);
+  --tp-input-foreground-color:#1e1e1e;
+  --tp-label-foreground-color:#5e5e5e;
+  --tp-monitor-background-color:rgba(128,128,128,.14);
+  --tp-monitor-foreground-color:#3a3a3a;
+}

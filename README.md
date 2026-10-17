@@ -1,6 +1,6 @@
 # Mockup Studio
 
-Single-file Three.js mockup tool. Drop images/videos onto the page, tweak the scene, record shots, export PNG or 15/30 s video.
+Three.js mockup tool (ES modules, no build step). Drop images/videos onto the page, tweak the scene, record shots, export PNG or 15/30 s video.
 
 ## Run
 ```bash

@@ -1,0 +1,95 @@
+import { $, DUR, EASE, reduced } from '../core/utils.js';
+import { P } from '../core/params.js';
+import { aoScale, camera, canvas, composer, gradePass, gtao, renderer, setAoScale } from './renderer.js';
+import { sun } from './scene.js';
+
+/* ───────────────────────── Tamaño / formato ───────────────────────── */
+export const FORMATS = { 'Pantalla':0, '16:9':16/9, '4:5':4/5, '1:1':1, '9:16':9/16, '3:2':3/2 };
+export let pr = Math.min(devicePixelRatio, 2), recording = false, exporting = false;
+export const INFO = { salida:'' }; export let infoBinding = null;
+export const PANEL_W = 312, wide = () => innerWidth > 820, panelOpen = () => !document.body.classList.contains('panel-closed');
+if (!wide()) document.body.classList.add('panel-closed'); // móvil: panel cerrado al inicio
+
+// El canvas ocupa TODA la pantalla. Para que el modelo quede centrado en el área libre
+// (sin panel, barra superior ni dock) desplazamos la imagen con camera.setViewOffset.
+export const viewShift = { x:0, y:0 };
+export let lastSx = null, lastSy = null, guide = null;
+const uiH = sel => document.querySelector(sel)?.offsetHeight || 0;
+function targetShift(){
+  const pw = panelOpen() && wide() ? PANEL_W : 0;
+  return { x: 0, y: 0 }; // canvas fullscreen fijo: abrir/cerrar paneles no mueve ni reencuadra la escena
+}
+// Rectángulo (px de pantalla) del área libre donde cabe el encuadre exportable
+function computeGuide(){
+  const r = FORMATS[P.exp.format]; if (!r) return null; // "Pantalla" = sin recorte
+  const W = innerWidth, H = innerHeight, pw = panelOpen() && wide() ? PANEL_W : 0;
+  // guía FIJA: se calcula sobre el viewport completo (márgenes de 48 px), no depende de paneles abiertos/cerrados
+  const x0 = 48, x1 = W - 48, y0 = 48, y1 = H - 48;
+  let fw = x1 - x0, fh = y1 - y0; if (fw < 80 || fh < 80) return null;
+  let w = fw, h = fw / r; if (h > fh) { h = fh; w = fh * r; }
+  return { x: x0 + (fw - w) / 2, y: y0 + (fh - h) / 2, w, h };
+}
+export function exportSize(){
+  const r = FORMATS[P.exp.format] || innerWidth / innerHeight, L = P.exp.long;
+  let w, h; if (r >= 1) { w = L; h = L / r; } else { h = L; w = L * r; }
+  return [Math.round(w / 2) * 2, Math.round(h / 2) * 2];
+}
+function setRenderSize(w, h, ratio){
+  renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
+  composer.setPixelRatio(ratio); composer.setSize(w, h);
+  gradePass.uniforms.uRes.value.set(w * ratio, h * ratio);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+export function applyView(){
+  const W = innerWidth, H = innerHeight; camera.aspect = W / H;
+  if (Math.abs(viewShift.x) > 0.01 || Math.abs(viewShift.y) > 0.01) camera.setViewOffset(W, H, -viewShift.x, -viewShift.y, W, H);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix(); lastSx = viewShift.x; lastSy = viewShift.y;
+}
+// Exportar = render del sub-rectángulo de la guía (lo que ves dentro de la guía es lo que sale)
+// Calidad: preview ligero (AO 50 %, sombra 2K) / export alto (AO 100 %, sombra 4K, más muestras)
+export function setQuality(high){
+  setAoScale(1);
+  gtao.updateGtaoMaterial({ samples: high ? 24 : 12 });
+  const sz = high ? 4096 : 2048;
+  if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; }
+}
+export function beginExport(w, h, ratio){
+  exporting = true; setQuality(true);
+  renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
+  composer.setPixelRatio(ratio); composer.setSize(w, h);
+  gradePass.uniforms.uRes.value.set(w * ratio, h * ratio);
+  const W = innerWidth, H = innerHeight; camera.aspect = W / H;
+  if (guide) { const s = targetShift(); camera.setViewOffset(W, H, guide.x - s.x, guide.y - s.y, guide.w, guide.h); }
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+export function endExport(){ exporting = false; setQuality(false); lastSx = null; layout(); }
+export function fitCanvasCss(w, h){
+  const W = innerWidth, H = innerHeight, m = guide ? 24 : 0;
+  let cw = W - 2 * m, ch = cw * h / w; if (ch > H - 2 * m) { ch = H - 2 * m; cw = ch * w / h; }
+  Object.assign(canvas.style, { inset:'auto', left:`${(W - cw) / 2}px`, top:`${(H - ch) / 2}px`, width:`${cw}px`, height:`${ch}px` });
+}
+export function layout(){
+  if (recording || exporting) return;
+  setRenderSize(innerWidth, innerHeight, pr);
+  guide = computeGuide();
+  const g = $('#guide');
+  if (guide) { g.hidden = false; Object.assign(g.style, { left:`${guide.x}px`, top:`${guide.y}px`, width:`${guide.w}px`, height:`${guide.h}px` }); $('#guideLbl').textContent = P.exp.format; }
+  else g.hidden = true;
+  const t = targetShift();
+  if (Math.abs(t.x - viewShift.x) > 0.5 || Math.abs(t.y - viewShift.y) > 0.5) gsap.to(viewShift, { x:t.x, y:t.y, duration:reduced ? 0 : DUR, ease:EASE, overwrite:true });
+  else { viewShift.x = t.x; viewShift.y = t.y; }
+  lastSx = null;
+  const [ew, eh] = exportSize();
+  INFO.salida = `${ew}×${eh}`; infoBinding?.refresh();
+}
+addEventListener('resize', layout);
+const ro = new ResizeObserver(layout); ro.observe(document.querySelector('.dock'));
+export function setPanel(open){ document.body.classList.toggle('panel-closed', !open); layout(); }
+
+// Los importadores no pueden reasignar un binding: se expone un setter.
+export const setRecording = v => { recording = v; };
+
+// Los importadores no pueden reasignar un binding: se expone un setter.
+export const setInfoBinding = v => { infoBinding = v; };
