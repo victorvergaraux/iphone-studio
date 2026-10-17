@@ -1,0 +1,9 @@
+{
+  "name": "mockup-studio",
+  "version": "54.0.0",
+  "private": true,
+  "description": "Three.js iPhone mockup studio with HDRI, carousel and video export",
+  "scripts": {
+    "start": "npx --yes serve . -l 5173"
+  }
+}
