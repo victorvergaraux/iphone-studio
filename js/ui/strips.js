@@ -42,7 +42,14 @@ export function deleteShot(){
   stopPresentation(); const n = curShot + 1; shots.splice(curShot, 1); setCurShot(-1); renderShots(); toast(`Toma T${pad2(n)} eliminada`);
 }
 export function togglePres(){ presTL ? stopPresentation() : playPresentation(); }
-export function setPlayBtn(on){ btnPlay.title = on ? '■ Stop  [Space]' : '▶ Play  [Space]'; }
+export function setPlayBtn(on){
+  btnPlay.title = on ? '■ Stop  [Space]' : '▶ Play  [Space]';
+  // Botón Play del rail: mismo estado (ON = tintado + icono de stop), sincronizado desde aquí
+  const r = $('#railPlay'); if (!r) return;
+  r.setAttribute('aria-pressed', String(!!on)); r.title = on ? 'Detener tomas [Espacio]' : 'Reproducir tomas [Espacio]'; r.setAttribute('aria-label', on ? 'Detener tomas' : 'Reproducir tomas');
+  r.innerHTML = `<i data-lucide="${on ? 'square' : 'play'}"></i>`; icons();
+}
+$('#railPlay')?.addEventListener('click', togglePres);
 export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? 'Pausar carrusel' : 'Reanudar carrusel'); icons(); }
 
 $('#scrPlay').onclick = () => { setCarPlaying(!carPlaying); setCarBtn(); scheduleCar(); };
