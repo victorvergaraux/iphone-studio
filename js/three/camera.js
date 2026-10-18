@@ -29,9 +29,19 @@ export const SHOT_PRESETS = {
     { name:'Diagonal',t:[0, 0, 0],         d:[-0.6, 1.4, 0.7],  frame:3.0,  fov:12, world:true },
     { name:'Low',   t:[0, -0.1, 0],      d:[0, -0.55, 1],     frame:2.0,  fov:11 },
   ]},
+  // Vic: tomas guardadas a mano (posición p, objetivo t y fov en coordenadas de mundo). No se adaptan a la pose del celular.
+  vic: { label:'Vic', absolute:[
+      { p:[-9.224, 1.408, 2.163], t:[-0.035, 1.112, 0.076], fov:8 },
+      { p:[0.05, 1.987, 2.677], t:[-0.054, 1.174, 0.049], fov:8 },
+      { p:[-1.732, 2.575, 1.583], t:[-0.312, 0.487, 0.485], fov:8 },
+      { p:[-2.336, 8.351, 5.311], t:[-0.071, 0.787, 0.158], fov:8 },
+      { p:[0.015, 2.687, 6.459], t:[-0.114, 0.887, 0.127], fov:8 },
+      { p:[-1.678, 4.895, 1.706], t:[-0.048, 0.877, 0.176], fov:8 },
+  ]},
 };
 function buildPresetShots(key){
   const def = SHOT_PRESETS[key] || SHOT_PRESETS.producto;
+  if (def.absolute) return def.absolute.map(sh => ({ ...sh, example:true })); // tomas en coordenadas de mundo, sin cálculo relativo al celular
   phone.updateWorldMatrix(true, false);
   const q = new THREE.Quaternion(); phone.getWorldQuaternion(q);
   const r3 = v => v.toArray().map(n => +n.toFixed(3));
