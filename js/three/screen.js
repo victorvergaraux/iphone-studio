@@ -43,10 +43,7 @@ export const screenMat = new THREE.ShaderMaterial({
         vec2 uvB = vUv + uDir * (1.0 - p);                   // entrante: llega desde el lado opuesto a velocidad completa
         vec3 a = frameSample(uTexA, uXfA, uvA);
         vec3 b = frameSample(uTexB, uXfB, uvB);
-        a *= 1.0 - 0.45 * p;                                 // la saliente se oscurece al quedar "detrás"
-        float edge = along - p;                              // distancia al borde de la entrante
-        float seam = smoothstep(0.08, 0.0, edge) * step(0.0, edge) * 0.35 * step(0.001, p) * step(p, 0.999);
-        a *= 1.0 - seam;                                     // sombra de contacto sobre el borde
+        a *= 1.0 - 0.9 * p;                                 // la saliente se oscurece progresivamente al quedar "detrás" (sin sombra de contacto en el borde)
         col = mix(a, b, step(along, p));                     // máscara dura: antes de p se ve la entrante
       }
       gl_FragColor = vec4(col * uExposure, 1.0);

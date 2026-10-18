@@ -137,7 +137,7 @@ tMotion.addBinding(P.anim, 'speed', { label:'Speed', min:0.1, max:3, step:0.01 }
 /* ── Screens: Flow (carrusel) · Edit (pantalla seleccionada) ── */
 const fK = pane.addFolder({ title:'Screens' });
 const [tFlow, tEdit] = tabs(fK, 'Flow', 'Edit');
-tFlow.addBinding(P.car, 'mode', { label:'Mode', options:{ 'Up':'up', 'Down':'down', 'LTR':'ltr', 'RTL':'rtl', 'Fade':'fade' } }).on('change', applyTransitionMode);
+tFlow.addBinding(P.car, 'mode', { label:'Mode', options:{ '↑':'up', '↓':'down', '→':'ltr', '←':'rtl', 'Fade':'fade' } }).on('change', applyTransitionMode);
 tFlow.addBinding(P.car, 'transition', { label:'Slide', min:0.3, max:3, step:0.05 });
 tFlow.addBinding(P.car, 'fadeDur', { label:'Fade', min:0.1, max:4, step:0.05 });
 tFlow.addBinding(P.car, 'hold', { label:'Hold', min:0.5, max:12, step:0.1 }).on('change', () => scheduleCar());
