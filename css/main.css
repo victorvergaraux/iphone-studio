@@ -1,6 +1,6 @@
 /* Layout: escenario 3D letterbox al centro, panel de parámetros a la derecha, dock editorial abajo (pantallas + tomas). */
 html,body{height:100%}
-body{--gap:12px;--radius:18px;--pw:calc(312px + var(--gap));margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-mono);font-size:12px;overflow:hidden}
+body{--gap:12px;--radius:18px;--rail-w:36px;--pw:calc(312px + var(--gap));margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-mono);font-size:12px;overflow:hidden}
 body.panel-closed{--pw:0px}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -27,10 +27,13 @@ body.recording .guide{display:none}
 .grid3{position:absolute;inset:0;opacity:.3}
 /* Toggles temporales: clase en <body> → ocultar retícula / marco oscuro sin tocar el layout del guide */
 body.no-grid .grid3{display:none}
+body.pres-playing .grid3{display:none} /* mientras corre la presentación de tomas la retícula se oculta; vuelve sola al parar (respeta no-grid) */
 body.no-frame .guide{box-shadow:none}
+.guide.full{box-shadow:none} /* formato "Pantalla": el guide cubre el viewport y solo dibuja la retícula (sin marco oscuro) */
+.guide.full span{display:none} /* ...ni etiqueta de formato */
 .grid3 i{position:absolute;display:block}
-.grid3 .v{top:0;bottom:0;width:1px;transform:translateX(-.5px);background:repeating-linear-gradient(to bottom,#555 0 4px,transparent 4px 8px)}
-.grid3 .h{left:0;right:0;height:1px;transform:translateY(-.5px);background:repeating-linear-gradient(to right,#555 0 4px,transparent 4px 8px)}
+.grid3 .v{top:0;bottom:0;width:1px;transform:translateX(-.5px);background:repeating-linear-gradient(to bottom,var(--mute) 0 4px,transparent 4px 8px)}
+.grid3 .h{left:0;right:0;height:1px;transform:translateY(-.5px);background:repeating-linear-gradient(to right,var(--mute) 0 4px,transparent 4px 8px)}
 .guide span{position:absolute;left:0;top:0;background:var(--ink);color:var(--paper-2);padding:2px 6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
 
 .rec{position:fixed;z-index:30;top:calc(16px + env(safe-area-inset-top,0px));right:max(16px, env(safe-area-inset-right,0px));display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;padding:6px 10px;font-size:11px;letter-spacing:.06em;font-variant-numeric:tabular-nums}
@@ -45,27 +48,27 @@ body.no-frame .guide{box-shadow:none}
 /* El panel ES Tweakpane: su barra de título pliega todo (bottom:auto → la tarjeta se encoge al plegar) */
 .side{position:fixed;z-index:20;top:calc(var(--gap) + env(safe-area-inset-top,0px));bottom:auto;max-height:calc(100% - 2 * var(--gap) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
   right:max(var(--gap), env(safe-area-inset-right,0px));width:312px;max-width:calc(100vw - 2 * var(--gap));border:0;border-radius:var(--radius);
-  background:color-mix(in srgb,var(--paper-2) calc(var(--panel-a) * 100%),transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));overflow:auto;scrollbar-width:thin;box-shadow:none;
-  transition:transform var(--dur) var(--ease)}
+  background:var(--paper-2);overflow:auto;scrollbar-width:thin;box-shadow:none; /* color sólido: sin transparencia ni desenfoque */
+  transition:opacity 500ms cubic-bezier(.22,.61,.36,1),visibility 0s}
+/* Plegado = desaparece por completo (fade solo de opacidad); el botón #railPanel del rail lo vuelve a abrir */
+body.panel-closed .side{opacity:0;visibility:hidden;pointer-events:none;transition:opacity 300ms cubic-bezier(.64,0,.78,0),visibility 0s linear 300ms}
 /* Bento: tarjetas flotantes con margen, radio y sombra suave; se ocultan deslizándose fuera del viewport */
 
-.side header{position:sticky;top:0;z-index:2;background:color-mix(in srgb,var(--paper-2) calc(var(--panel-a) * 100%),transparent);display:flex;justify-content:space-between;align-items:center;padding:14px 12px 10px}
+.side header{position:sticky;top:0;z-index:2;background:var(--paper-2);display:flex;justify-content:space-between;align-items:center;padding:14px 12px 10px}
 .side header h2{margin:0;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
 #pane{padding:6px}
 #pane .tp-dfwv{width:100%!important}
 
 .dock{position:fixed;z-index:5;left:max(var(--gap), env(safe-area-inset-left,0px));right:calc(var(--pw) + var(--gap));bottom:calc(var(--gap) + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:minmax(0,1fr);
   border-radius:var(--radius);box-shadow:none;
-  background:color-mix(in srgb,var(--paper-2) calc(var(--panel-a) * 100%),transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));border:0;
+  background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));border:0;font-family:var(--f-text);
   transition:right var(--dur) var(--ease),transform var(--dur) var(--ease)}
-body.panel-closed .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px))} /* ocultar ajustes también oculta la barra de pantallas */
-.row{min-width:0;padding-block:10px 12px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:grid;gap:8px}
+/* El dock solo depende del botón del rail / tecla D (clase dock-hidden), NO del panel de ajustes. Se desliza fuera hacia abajo. */
+body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));pointer-events:none;visibility:hidden;
+  transition:right var(--dur) var(--ease),transform var(--dur) var(--ease),visibility 0s linear var(--dur)} /* visibility tras el slide: fuera del foco/tab */
+.row{min-width:0;padding:16px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:grid;gap:12px}
 
 .rowhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.dock .rowhead{justify-content:flex-start;gap:16px} /* controles pegados al título «Pantallas 03» */
-.dock .rowhead .tools{order:-1} /* primero los controles, luego el título (orden visual; el DOM no cambia) */
-.dock #scrAdd{order:-1} /* «Cargar» es la acción principal: va primero */
-.dock #scrReplace{order:-1} /* y su modo (agregar / reemplazar) justo al lado */
 .label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .label b{color:var(--ink);font-weight:500}
 .tools{display:flex;gap:6px;flex-wrap:wrap}
@@ -77,19 +80,58 @@ body.panel-closed .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px))}
 .btn.on{background:var(--accent);color:var(--ink)}
 .btn svg{width:14px;height:14px;stroke-width:1.6}
 .btn.icon{padding:0;width:28px;justify-content:center;flex:0 0 auto}
+/* Dock con el lenguaje de las cards (onboarding / export): cifra y título en display, filetes finos, Inter en texto y botones */
+.dock .rowhead{padding-bottom:12px;border-bottom:1px solid var(--line)}
+.dock .label{display:flex;align-items:baseline;gap:10px;font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;line-height:1;text-transform:none;color:var(--ink)}
+.dock .label b{order:-1;font-weight:800;font-size:40px;letter-spacing:-.05em;line-height:.82;font-variant-numeric:tabular-nums}
+.dock .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;height:30px;padding:0 12px;border:0}
+.dock .btn.solid{background:var(--ink);color:var(--paper-2)}
+.dock .btn.solid:hover{background:var(--ink);opacity:.85}
+.dock .btn.icon{padding:0;width:30px}
+/* Interruptor (Reemplazar todo): pista + perilla, sin borde; encendida = pista en tinta */
+.dock .tgl{display:inline-flex;align-items:center;gap:10px;height:30px;padding:0 4px 0 0;border:0;background:none;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--ink)}
+.dock .tgl:hover{background:none;color:var(--ink)}
+.tgl-track{position:relative;flex:0 0 auto;width:28px;height:16px;border-radius:999px;background:var(--line);transition:background var(--dur) var(--ease)}
+.tgl-track i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--paper-2);transition:transform var(--dur) var(--ease)}
+.tgl[aria-checked="true"] .tgl-track{background:var(--ink)}
+.tgl[aria-checked="true"] .tgl-track i{transform:translateX(12px)}
+.dock .btn:disabled{opacity:.3}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:7px;opacity:.5;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);overflow:hidden;cursor:pointer;background:#ccc;padding:0}
+.thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:7px;opacity:.5;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);overflow:hidden;cursor:pointer;background:var(--line);padding:0}
 .thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .thumb.cur{opacity:1;transform:translateY(-3px)} /* activa: opacidad completa + leve elevación, sin borde */
 .thumb:hover{opacity:.85}
 .thumb.sel::after{content:"";position:absolute;inset:auto 4px 4px auto;width:7px;height:7px;border-radius:50%;background:var(--ink)}
-.thumb .vid{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;background:#222;color:#fff;letter-spacing:.08em}
+.thumb .vid{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;background:var(--ink);color:var(--paper-2);letter-spacing:.08em}
 .chip{flex:0 0 auto;display:inline-flex;align-items:center;height:28px;border:0;font-variant-numeric:tabular-nums}
 .chip button{background:none;border:0;height:100%;padding:0 10px;cursor:pointer;font-size:11px}
 .chip button + button{border:0;padding:0 7px;color:var(--mute)}
 .chip.cur{background:var(--accent)}
 .chip button:hover{text-decoration:underline}
 .empty{font-size:11px;color:var(--mute);align-self:center}
+
+/* Onboarding: tarjeta suiza (número gigante, filetes finos, una sola columna). Flota arriba a la izquierda, sin bloquear la escena. */
+/* Rail de herramientas: columna de botones icono en el borde izquierdo (Export · Dock · Ayuda). Las cards flotantes (onboarding, export) se anclan a su derecha. */
+.rail{position:fixed;z-index:21;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:max(var(--gap), env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:6px}
+.rail .btn{width:var(--rail-w);height:var(--rail-w);border-radius:12px;background:var(--paper-2)}
+/* Estado ON/OFF: el aspecto de hover (tinta) se queda fijo mientras el panel/card/dock esté activo */
+.rail .btn:hover,.rail .btn[aria-pressed="true"],.rail .btn[aria-expanded="true"]{background:var(--ink);color:var(--paper-2)}
+.onb{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:300px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));
+  padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:16px;font-family:var(--f-text)}
+.onb .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;height:30px;padding:0 12px}
+.onb-skip{position:absolute;top:30px;right:16px;background:none;border:0;padding:0;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--mute)}
+.onb-skip:hover{color:var(--ink);text-decoration:underline}
+.onb-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.onb-bars i{height:2px;background:var(--line);transition:background var(--dur) var(--ease)}
+.onb-bars i.on{background:var(--ink)}
+/* Alto fijo: el contenido cambia por paso pero la tarjeta no se mueve; las acciones se anclan abajo */
+.onb-body{display:flex;flex-direction:column;gap:10px;height:236px}
+.onb-num{font-family:var(--f-display);font-weight:800;font-size:96px;line-height:.82;letter-spacing:-.05em;margin-left:-4px}
+.onb h2{margin:6px 0 0;font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;line-height:1}
+.onb p{margin:0;font-size:13px;line-height:1.5;color:var(--mute);font-weight:400}
+.onb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.onb-nav{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line)}
+.btn:disabled{opacity:.3;pointer-events:none}
 
 .modal{position:fixed;inset:0;background:rgba(18,18,17,.6);display:grid;place-items:center;z-index:40;padding:16px}
 .modal .card{background:var(--paper-2);border:0;max-width:min(720px,100%);width:100%;padding:16px;display:grid;gap:12px}
@@ -103,5 +145,9 @@ body.panel-closed .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px))}
   body,body.panel-closed{--pw:0px}
   .dock{right:var(--gap)}
   body:not(.panel-closed) .fab{display:none} /* en móvil el panel cubre el botón: se cierra con la X del panel */
+}
+/* Viewport bajo: el rail (arriba-izquierda, 3 botones) podría chocar con el dock → el dock se corre a la derecha del rail */
+@media (max-height:420px){
+  .dock{left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap))}
 }
 @media (prefers-reduced-motion:reduce){*{transition-duration:1ms!important;animation:none!important}}

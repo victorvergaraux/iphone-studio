@@ -33,6 +33,6 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) saveN
    Hay que bloquear saveNow antes de recargar: pagehide/visibilitychange lo llaman y volvería a escribir el estado actual. */
 export function resetAll(){
   wiped = true; clearTimeout(saveT); saveT = 0;
-  try { localStorage.removeItem(STORE_KEY); localStorage.removeItem('mockup-studio:v1'); } catch {}
+  try { localStorage.removeItem(STORE_KEY); localStorage.removeItem('mockup-studio:v1'); localStorage.removeItem('mockup-studio:onboarded'); } catch {}
   location.reload();
 }

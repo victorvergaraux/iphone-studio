@@ -4,6 +4,7 @@ import { screenMat } from '../three/screen.js';
 import { addItem, clearCar, cur, goTo, items, maxTex, setCur, setNextIdx, setSel } from './carousel.js';
 import { refreshEdit } from '../ui/pane.js';
 import { addShot, renderStrip, togglePres } from '../ui/strips.js';
+import { toggleDock } from '../ui/dockToggle.js';
 
 /* ───────────────────────── Carga: input, drag & drop, pegar ───────────────────────── */
 function fitToMax(img){
@@ -42,7 +43,12 @@ addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])]; 
 /* Atajos: Espacio = presentación, S = guardar toma, ←/→ = pantallas */
 addEventListener('keydown', e => {
   if (e.target.closest('input, textarea, .tp-dfwv')) return;
-  if (e.code === 'Space') { e.preventDefault(); togglePres(); }
+  if (e.ctrlKey || e.metaKey || e.altKey) return; // Ctrl/Cmd/Alt+tecla = atajos del navegador (p. ej. Ctrl+S), no los nuestros
+  if (e.code === 'Space') {
+    if (e.target.closest('button')) return; // en un botón, Espacio ya hace su click: no disparar además la presentación
+    e.preventDefault(); togglePres();
+  }
+  else if (e.key === 'd' || e.key === 'D') toggleDock();
   else if (e.key === 's' || e.key === 'S') addShot();
   else if (e.key === 'ArrowRight') goTo(cur + 1);
   else if (e.key === 'ArrowLeft') goTo(cur - 1);

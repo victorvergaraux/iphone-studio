@@ -1,0 +1,38 @@
+/* Card de exportación: hermana visual del onboarding (.onb). Flota a la derecha del rail, arriba. Solo tokens. */
+.exp{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:320px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));max-height:calc(100vh - 2 * var(--gap));overflow-y:auto;scrollbar-width:none;
+  padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:14px;font-family:var(--f-text);color:var(--ink)}
+.exp[hidden]{display:none}
+.exp::-webkit-scrollbar{display:none}
+.exp .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0}
+.exp-head{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.exp h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;line-height:1}
+.exp-link{background:none;border:0;padding:0;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--mute)}
+.exp-link:hover{color:var(--ink);text-decoration:underline}
+.exp-lbl{font-size:11px;font-weight:500;color:var(--mute);letter-spacing:.02em}
+/* Lectura grande de la salida (cifra display, como el número del onboarding) */
+.exp-out{display:grid;gap:6px}
+.exp-size{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:.9;letter-spacing:-.05em;margin-left:-2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.exp-main{display:grid;gap:10px}
+.exp-row{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px}
+.exp-row.wide{grid-template-columns:1fr;gap:6px}
+.exp-row.off{visibility:hidden}
+.exp-row.dis{opacity:.35}
+.exp-row.dis .exp-rng{pointer-events:none}
+/* Segmentos: botones planos con filete; el activo se rellena de tinta */
+.exp-seg{display:flex;gap:4px}
+.exp-seg button{flex:1 1 auto;height:28px;padding:0 6px;border-radius:8px;border:0;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),border-color var(--dur) var(--ease)}
+.exp-seg button:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}
+.exp-seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper-2)}
+.exp-go{width:100%;height:44px;font-size:13px}
+/* Más ajustes: filete superior, título como botón; el cuerpo se anima en alto (JS) */
+.exp-more{border-top:1px solid var(--line);padding-top:12px;display:grid}
+.exp-more-t{display:flex;justify-content:space-between;align-items:center;background:none;border:0;padding:0;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--mute)}
+.exp-more-t:hover{color:var(--ink)}
+.exp-more-b{overflow:hidden}
+/* Los dos paneles comparten celda: el alto es el del mayor, así PNG ↔ Video no mueve la card */
+.exp-stack{display:grid;padding-top:12px}
+.exp-pane{grid-area:1/1;display:grid;gap:10px;align-content:start}
+.exp-pane.off{visibility:hidden}
+.exp-sl{display:flex;align-items:center;gap:8px}
+.exp-rng{flex:1;min-width:0;accent-color:var(--ink);height:28px;margin:0}
+.exp-val{width:34px;text-align:right;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}

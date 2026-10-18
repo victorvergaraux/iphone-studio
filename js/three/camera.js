@@ -14,6 +14,13 @@ export const snap = () => ({ p: camera.position.toArray(), t: controls.target.to
    así funcionan con cualquier pose y giro. "frame" = alto visible en unidades de mundo → la distancia sale
    de la óptica: dist = frame / (2·tan(fov/2)). world:true = dirección en espacio de mundo (p. ej. cenital). */
 export const SHOT_PRESETS = {
+  // Base (por defecto, primero de la lista): 4 tomas en la línea de Vic (tele fov 8, coordenadas de mundo) pero desde el lado opuesto: derecha baja → frontal cercana → cenital diagonal → pull-back.
+  base: { label:'Base', absolute:[
+      { name:'Right',  p:[3.5, 1.8, 6.2],   t:[-0.05, 1.0, 0.1],  fov:8 },
+      { name:'Close',  p:[1.4, 3.0, 3.6],    t:[-0.06, 1.15, 0.06], fov:8 },
+      { name:'Aerial', p:[3.0, 8.5, 5.0],    t:[-0.05, 0.85, 0.15], fov:8 },
+      { name:'Pull',   p:[-0.6, 1.15, 9.5],  t:[-0.1, 0.95, 0.12],  fov:8 },
+  ]},
   producto: { label:'Product', shots:[
     { name:'Hero',       t:[0, 0.05, 0],      d:[0.55, -0.15, 1],  frame:1.9,  fov:10 },
     { name:'Top',        t:[0, 0, 0],         d:[0.15, 1, 0.25],   frame:2.4,  fov:12, world:true },
@@ -142,14 +149,18 @@ function buildPresentation(loop){
     tl.to({}, { duration:Math.max(hold, tr > 0 ? 0 : 0.05) });
   });
   if (loop) tl.eventCallback('onComplete', () => { presTL = buildPresentation(true); });
+  // Sin loop: al terminar se libera todo (botón, controles, retícula). Solo si este timeline sigue siendo el activo.
+  else tl.eventCallback('onComplete', () => { if (presTL === tl) stopPresentation(); });
   return tl;
 }
 export function playPresentation(loop = P.shots.loop){
   if (shots.length < 1) return toast('Guarda al menos una toma');
   stopPresentation(); flyTween?.kill(); flyTween = null; controls.enabled = false; camTweening = true;
   presTL = buildPresentation(loop); hooks.setPlayBtn(true);
+  document.body.classList.add('pres-playing'); // oculta la retícula mientras corre la presentación
 }
 export function stopPresentation(){
+  document.body.classList.remove('pres-playing'); // siempre se limpia, aunque no hubiera presTL (sin estados colgados)
   if (!presTL) return;
   presTL.kill(); presTL = null; camTweening = false; controls.enabled = true; hooks.setPlayBtn(false);
 }

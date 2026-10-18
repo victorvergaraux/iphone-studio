@@ -14,7 +14,11 @@ import './three/camera.js';
 import './three/format.js';
 import './three/loop.js';
 import './ui/pane.js';
+import './ui/quality.js';
 import './ui/strips.js';
+import './ui/dockToggle.js';
+import './ui/onboarding.js';
+import './ui/exportcard.js';
 import './screens/load.js';
 import './export/export.js';
 import './export/offline.js';
@@ -34,6 +38,7 @@ import { tick } from './three/loop.js';
 import { refreshEdit } from './ui/pane.js';
 import { renderShots, renderStrip, setCarBtn } from './ui/strips.js';
 import { EXAMPLES } from './data/examples-data.js';
+import { showFirstTime } from './ui/onboarding.js';
 
 /* ───────────────────────── Arranque ───────────────────────── */
 (async () => {
@@ -50,6 +55,7 @@ import { EXAMPLES } from './data/examples-data.js';
   camera.fov = shots[0].fov; camera.updateProjectionMatrix();
   controls.target.fromArray(shots[0].t); camera.position.fromArray(shots[0].p); setCurShot(0);
   renderStrip(); renderShots(); refreshEdit(); setCarBtn(); icons(); setQuality(false); layout(); scheduleCar();
+  showFirstTime();
   await loadEnv(P.env.preset);
   requestAnimationFrame(tick);
 })();

@@ -5,7 +5,7 @@ import { $, DUR, EASE, toast } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { resetAll, saveSoon } from '../core/persist.js';
 import { camera, gradePass, gtao, renderer } from '../three/renderer.js';
-import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, OBJ_PRESETS, applyFloorMode, applyObjPos, applyObjPreset, applySurfaceTex, placeKey, sun } from '../three/scene.js';
+import { bgColor, blocksG, ground, mAccent, mBlocks, mFloor, OBJ_PRESETS, applyFloorMode, applyObjPos, applyObjPreset, applySurfaceTex, placeKey, sun } from '../three/scene.js';
 import { HDRI, applyBackground, applyEnvIntensity, loadEnv, scheduleEnv } from '../three/hdri.js';
 import { brushedTex, makeBrushed } from '../three/metal.js';
 import { S_ASPECT, anchor, mFrame, makeButtons } from '../three/iphone.js';
@@ -13,10 +13,8 @@ import { applyTransitionMode, island, mGlass, screenMat } from '../three/screen.
 import { applySmudgeScale, prop, rebuildShape, setPose, smudgeU } from '../three/smudge.js';
 import { cur, goTo, items, nextIdx, scheduleCar, scrollTween, sel } from '../screens/carousel.js';
 import { CAM_EASES, SHOT_PRESETS, applyShotPreset, camTweening, shots } from '../three/camera.js';
-import { FORMATS, INFO, infoBinding, layout, panelOpen, setInfoBinding, setPanel } from '../three/format.js';
+import { panelOpen, setPanel } from '../three/format.js';
 import { addShot, deleteShot, togglePres, updateShot } from './strips.js';
-import { snapshot } from '../export/export.js';
-import { startRecording } from '../export/offline.js';
 import { exportProject } from '../export/project.js';
 import { hooks } from '../core/hooks.js';
 
@@ -27,7 +25,13 @@ import { hooks } from '../core/hooks.js';
    o sigla. Las filas de botones usan 'buttongrid' (@tweakpane/plugin-essentials): 3 acciones en 1 fila. */
 export const pane = new Pane({ container: $('#pane'), title:'Controls', expanded: panelOpen() });
 pane.registerPlugin(EssentialsPlugin);
-pane.on('fold', e => { if (e.target === pane) setPanel(e.expanded); }); // solo el panel raíz: plegarlo también oculta la barra de pantallas
+// Medidor de FPS: vive dentro del panel raíz → solo se ve con el panel desplegado. loop.js lo alimenta vía hooks (begin/end por cuadro)
+hooks.fps = pane.addBlade({ view:'fpsgraph', label:'FPS', rows:2 });
+// Botón del rail (#railPanel): pliega/despliega los controles avanzados; aria-pressed sigue al estado real (también al plegar con la barra de título)
+const railPanel = $('#railPanel'), syncRailPanel = () => railPanel?.setAttribute('aria-pressed', String(pane.expanded));
+pane.on('fold', e => { if (e.target === pane) { setPanel(e.expanded); syncRailPanel(); } }); // solo el panel raíz
+railPanel?.addEventListener('click', () => { pane.expanded = !pane.expanded; });
+syncRailPanel();
 const EDIT = { fit:'cover', zoom:1, offX:0, offY:0, scroll:.5, autoScroll:false };
 const OFF = { xy:{ x:0, y:0 } }; // offset X/Y fusionado en un solo control Point2D (1 fila + pad 2D)
 let syncing = false; // evita que refrescar el panel dispare los handlers de cambio
@@ -200,24 +204,6 @@ fT.addButton({ title:'Copy JSON' }).on('click', async () => {
 });
 export const fList = fT.addFolder({ title:'List' });
 export let shotBtns = [];
-
-/* ── Export: formato y tamaño comunes arriba · Video / Image en pestañas ── */
-const fE = pane.addFolder({ title:'Export' });
-fE.addBinding(P.exp, 'format', { label:'Format', options:Object.fromEntries(Object.keys(FORMATS).map(k => [k === 'Pantalla' ? 'Screen' : k, k])) }).on('change', layout);
-fE.addBinding(P.exp, 'long', { label:'Size', options:{ 'HD':1280, 'FHD':1920, 'QHD':2560, '4K':3840 } }).on('change', layout);
-setInfoBinding(fE.addBinding(INFO, 'salida', { label:'Output', readonly:true }));
-const [tVid, tImg] = tabs(fE, 'Video', 'Image');
-tVid.addBinding(P.exp, 'length', { label:'Length', options:{ '15s':15, '30s':30, 'Shots':0 } });
-tVid.addBinding(P.exp, 'mbps', { label:'Mbps', options:{ '6':6, '16':16, '40':40 } });
-tVid.addBinding(P.exp, 'fps', { label:'FPS', options:{ '30':30, '60':60 } });
-tVid.addBinding(P.exp, 'playShots', { label:'Shots' });
-tVid.addBinding(P.exp, 'mode', { label:'Mode', options:{ 'Offline':'offline', 'Realtime':'realtime' } });
-tVid.addBinding(P.exp, 'container', { label:'Codec', options:{ 'Auto':'auto', 'MP4':'mp4', 'WebM':'webm' } });
-tVid.addButton({ title:'Render video' }).on('click', startRecording);
-tImg.addBinding(P.exp, 'pngScale', { label:'Scale', options:{ '1×':1, '2×':2 } });
-tImg.addBinding(P.exp, 'transparent', { label:'Alpha' });
-tImg.addBinding(P.exp, 'shadowOpacity', { label:'Shadow', min:0, max:1, step:0.01 }).on('change', e => catcher.material.opacity = e.value);
-tImg.addButton({ title:'Capture PNG' }).on('click', snapshot);
 
 /* ── UI (temporal, no se guarda) + proyecto JSON ── */
 const UI_TMP = { panelOpacity:0.1, panelBlur:18, guideDim:0.3, showGrid:true, showFrame:true };

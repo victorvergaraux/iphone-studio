@@ -2,9 +2,10 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/export.css">
 
 <canvas id="c" aria-label="Escena 3D del mockup. Arrastra para orbitar, rueda para acercar."></canvas>
 <div class="guide" id="guide" hidden><div class="grid3" aria-hidden="true"><i class="v" style="left:33.333%"></i><i class="v" style="left:66.666%"></i><i class="h" style="top:33.333%"></i><i class="h" style="top:66.666%"></i></div><span id="guideLbl">9:16</span></div>
@@ -27,7 +28,7 @@
         <button class="btn icon" id="scrRight" title="Mover a la derecha" aria-label="Mover pantalla a la derecha"><i data-lucide="arrow-right"></i></button>
         <button class="btn icon" id="scrDel" title="Eliminar pantalla" aria-label="Eliminar pantalla seleccionada"><i data-lucide="trash-2"></i></button>
         <button class="btn solid" id="scrAdd"><i data-lucide="image-plus"></i>Cargar</button>
-        <button class="btn" id="scrReplace" aria-pressed="false" title="Al cargar, reemplaza todas las pantallas en vez de agregar">Replace all</button>
+        <button class="tgl" id="scrReplace" role="switch" aria-checked="false" title="Al cargar, reemplaza todas las pantallas en vez de agregar"><span class="tgl-track"><i></i></span>Reemplazar todo</button>
         <input type="file" id="file" accept="image/*,video/*" multiple hidden>
         <input type="file" id="projFile" accept="application/json,.json" hidden>
       </div>
@@ -35,6 +36,35 @@
     <div class="strip" id="strip"></div>
   </section>
 </div>
+<nav class="rail ui" id="rail" aria-label="Herramientas">
+  <button class="btn icon" id="onbHelp" title="Introducción" aria-label="Abrir introducción" aria-expanded="false"><i data-lucide="circle-help"></i></button>
+  <button class="btn icon" id="railExport" title="Exportar" aria-label="Exportar" aria-expanded="false"><i data-lucide="download"></i></button>
+  <button class="btn icon" id="railDock" title="Mostrar u ocultar pantallas [D]" aria-label="Mostrar u ocultar pantallas" aria-pressed="true"><i data-lucide="panel-bottom"></i></button>
+  <button class="btn icon" id="railPanel" title="Mostrar u ocultar controles avanzados" aria-label="Mostrar u ocultar controles avanzados" aria-pressed="false"><i data-lucide="sliders-horizontal"></i></button>
+</nav>
+<aside class="onb ui" id="onb" role="dialog" aria-label="Introducción" hidden>
+  <div class="onb-bars" aria-hidden="true"><i></i><i></i><i></i></div>
+  <button class="onb-skip" id="onbSkip">Saltar</button>
+  <div class="onb-body" id="onbBody">
+    <div class="onb-num" id="onbNum">01</div>
+    <h2 id="onbTitle"></h2>
+    <p id="onbText"></p>
+    <div class="onb-acts" id="onbActs"></div>
+  </div>
+  <footer class="onb-nav"><button class="btn" id="onbBack">Atrás</button><button class="btn solid" id="onbNext">Siguiente</button></footer>
+</aside>
+<aside class="exp ui" id="expCard" role="dialog" aria-label="Exportar" hidden>
+  <header class="exp-head"><h2>Exportar</h2><button class="exp-link" id="expClose">Cerrar</button></header>
+  <div class="exp-out"><span class="exp-lbl">Salida · píxeles</span><div class="exp-size" id="expSize" aria-live="polite"></div></div>
+  <div class="exp-main" id="expMain"></div>
+  <button class="btn solid exp-go" id="expGo"></button>
+  <div class="exp-more">
+    <button class="exp-more-t" id="expMoreT" aria-expanded="false" aria-controls="expMoreBody"><span>Más ajustes</span><span id="expMoreI" aria-hidden="true">+</span></button>
+    <div class="exp-more-b" id="expMoreBody">
+      <div class="exp-stack"><div class="exp-pane" id="expVid"></div><div class="exp-pane" id="expPng"></div></div>
+    </div>
+  </div>
+</aside>
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>

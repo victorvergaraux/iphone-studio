@@ -48,7 +48,7 @@ export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPla
 $('#scrPlay').onclick = () => { setCarPlaying(!carPlaying); setCarBtn(); scheduleCar(); };
 $('#scrAdd').onclick = () => $('#file').click();
 // Toggle persistente (P.car.replaceAll): Cargar reemplaza todas las pantallas en vez de agregar
-export function syncReplace(){ const b = $('#scrReplace'); b.classList.toggle('on', P.car.replaceAll); b.setAttribute('aria-pressed', P.car.replaceAll); }
+export function syncReplace(){ const b = $('#scrReplace'); b.classList.toggle('on', P.car.replaceAll); b.setAttribute('aria-checked', String(P.car.replaceAll)); }
 $('#scrReplace').onclick = () => { P.car.replaceAll = !P.car.replaceAll; syncReplace(); saveSoon(); };
 syncReplace();
 $('#file').onchange = e => { loadFiles(e.target.files); e.target.value = ''; };

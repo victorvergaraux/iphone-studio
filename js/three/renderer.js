@@ -23,8 +23,12 @@ THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fra
   #define PCSS_DEPTH_RANGE 29.5   // far - near de la cámara de sombra (mundo)
   #define PCSS_FRUSTUM 12.0       // ancho del frustum ortográfico (mundo)
   float pcssHash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
-  // Disco de Vogel: muestras repartidas con el ángulo áureo, cobertura uniforme con pocas muestras
-  vec2 pcssVogel(int i, float phi){ float r = sqrt(float(i) + 0.5) / sqrt(float(PCSS_SAMPLES)); float t = float(i) * 2.399963 + phi; return vec2(cos(t), sin(t)) * r; }
+  // Disco de Vogel: muestras repartidas con el ángulo áureo, cobertura uniforme con pocas muestras.
+  // Optimización: en vez de cos/sin por muestra (32 de cada uno por píxel), se rota la dirección un ángulo áureo por
+  // iteración (2 mult-add). Matemáticamente idéntico: el ángulo de la muestra i sigue siendo i·2.399963 + phi.
+  const vec2 PCSS_GOLD = vec2(cos(2.399963), sin(2.399963));
+  vec2 pcssNext(vec2 d){ return vec2(d.x * PCSS_GOLD.x - d.y * PCSS_GOLD.y, d.x * PCSS_GOLD.y + d.y * PCSS_GOLD.x); }
+  float pcssRad(int i){ return sqrt((float(i) + 0.5) / float(PCSS_SAMPLES)); } // radio de la muestra i (0..1)
   float PCSS(sampler2D map, vec4 sc, float lightDeg){
     float tanA = tan(radians(max(lightDeg, 0.05)));
     float mapSize = float(textureSize(map, 0).x);
@@ -32,17 +36,24 @@ THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fra
     float phi = pcssHash(gl_FragCoord.xy) * 6.2831853;     // rotación aleatoria por píxel: cambia banding por ruido fino
     // 1) Búsqueda de oclusores: profundidad media de lo que bloquea la luz
     float searchR = tanA * 2.0 / texelW, sum = 0.0, cnt = 0.0;
+    vec2 dir = vec2(cos(phi), sin(phi));
+    float searchUv = searchR / mapSize;
     for (int i = 0; i < PCSS_SAMPLES; i++) {
-      float d = unpackRGBAToDepth(texture2D(map, sc.xy + pcssVogel(i, phi) * searchR / mapSize));
+      float d = unpackRGBAToDepth(texture2D(map, sc.xy + dir * (pcssRad(i) * searchUv)));
       if (d < sc.z) { sum += d; cnt += 1.0; }
+      dir = pcssNext(dir);
     }
     if (cnt == 0.0) return 1.0;
     // 2) Penumbra = distancia receptor-oclusor × tamaño angular de la luz
     float dist = (sc.z - sum / cnt) * PCSS_DEPTH_RANGE;
     float filterR = max(1.0, dist * tanA / texelW);
     // 3) PCF con radio variable
-    float lit = 0.0;
-    for (int i = 0; i < PCSS_SAMPLES; i++) lit += step(sc.z, unpackRGBAToDepth(texture2D(map, sc.xy + pcssVogel(i, phi) * filterR / mapSize)));
+    float lit = 0.0, filterUv = filterR / mapSize;
+    dir = vec2(cos(phi), sin(phi)); // misma rotación por píxel que en la búsqueda
+    for (int i = 0; i < PCSS_SAMPLES; i++) {
+      lit += step(sc.z, unpackRGBAToDepth(texture2D(map, sc.xy + dir * (pcssRad(i) * filterUv))));
+      dir = pcssNext(dir);
+    }
     return lit / float(PCSS_SAMPLES);
   }`)
   .replace('#if defined( SHADOWMAP_TYPE_PCF )', 'return PCSS(shadowMap, shadowCoord, shadowRadius);\n#if defined( SHADOWMAP_TYPE_PCF )');
@@ -112,6 +123,9 @@ export const gradePass = new ShaderPass({
       c *= 1.0 - uVignette * smoothstep(0.35, 0.85, d); // viñeta suave en esquinas
       // Grano en 2 escalas: fino (1 px) + grumo (~2 px, medio tono). El desplazamiento aleatorio por cuadro evita que el
       // patrón se alinee con la rejilla de píxeles (moiré/diagonales) cuando el canvas se escala por CSS.
+      // Sin grano (uGrain = 0) el término sumado es exactamente 0 → se salta el cálculo (18 hashes de 3 rondas por píxel).
+      // uGrain es uniform: la rama es coherente en todo el cuadro, sin divergencia.
+      if (uGrain > 0.0) {
       uint fr = uint(floor(uTime * 24.0));                          // 24 cuadros de grano por segundo
       uvec2 px = uvec2(gl_FragCoord.xy);
       uvec2 off = uvec2(hash1(uvec2(7u, 3u), fr, 9u) * 1024.0, hash1(uvec2(5u, 11u), fr, 8u) * 1024.0);
@@ -123,6 +137,7 @@ export const gradePass = new ShaderPass({
       float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
       float w = 1.0 - 0.55 * pow(abs(luma * 2.0 - 1.0), 2.0);      // más grano en medios tonos, menos en negros/blancos
       c += g * w * uGrain;
+      }
       // uAlpha = 1 solo en export transparente: conserva el alfa de la escena y premultiplica (el canvas usa premultipliedAlpha)
       float a = mix(1.0, clamp(src.a, 0.0, 1.0), uAlpha);
       gl_FragColor = vec4(clamp(c, 0.0, 1.0) * a, a);
