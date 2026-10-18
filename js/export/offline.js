@@ -23,7 +23,10 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
    Si un intento falla (al configurar o a mitad del render), se reintenta solo con el siguiente. */
 function videoCandidates(w, h, fps){
   const fs = Math.ceil(w / 16) * Math.ceil(h / 16), mbs = fs * fps;
-  const avcLevel = fs <= 8704 && mbs <= 522240 ? '28' : fs <= 36864 && mbs <= 983040 ? '33' : '34';   // 4.2 · 5.1 · 5.2
+  // level_idc va en HEX de 2 dígitos = nivel×10: 4.2 → 0x2a, 5.1 → 0x33, 5.2 → 0x34. Antes se usaba '28' (= nivel 4.0, de solo
+  // 245 760 MB/s) para todo lo que cabe en 4.2: 1080p a 60 fps (489 600 MB/s) excedía el nivel declarado y los encoders
+  // por hardware lo rechazaban al configurar o a mitad del render.
+  const avcLevel = fs <= 8704 && mbs <= 522240 ? '2a' : fs <= 36864 && mbs <= 983040 ? '33' : '34';   // 4.2 · 5.1 · 5.2
   const vp9Level = fs <= 8704 ? (fps > 30 ? '41' : '40') : (fps > 30 ? '51' : '50');
   const mp4 = [
     { ext:'mp4', label:'MP4 · H.264', codec:`avc1.6400${avcLevel}`, mux:'avc', hw:'no-preference' },
@@ -48,7 +51,7 @@ export async function startRecording(){
   for (const cand of videoCandidates(w, h, fps)) {
     const cfg = { codec:cand.codec, width:w, height:h, bitrate:P.exp.mbps * 1e6, framerate:fps, hardwareAcceleration:cand.hw,
                   ...(cand.mux === 'avc' ? { avc:{ format:'avc' } } : {}) };
-    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(`${cand.label}: no soportado`); continue; } }
+    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(`${cand.label}: no soportado (${cand.codec} ${w}x${h}@${fps})`); continue; } }
     catch (e) { errors.push(`${cand.label}: ${e.message}`); continue; }
     const res = await renderVideo(cand, cfg, { w, h, fps, len, usePres });
     if (res.cancelled) return toast('Render cancelado');
