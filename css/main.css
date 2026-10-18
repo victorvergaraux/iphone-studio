@@ -65,7 +65,7 @@ body.panel-closed .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px))}
 .dock .rowhead{justify-content:flex-start;gap:16px} /* controles pegados al título «Pantallas 03» */
 .dock .rowhead .tools{order:-1} /* primero los controles, luego el título (orden visual; el DOM no cambia) */
 .dock #scrAdd{order:-1} /* «Cargar» es la acción principal: va primero */
-.dock #scrAdd{order:-1} /* «Cargar» es la acción principal: va primero */
+.dock #scrReplace{order:-1} /* y su modo (agregar / reemplazar) justo al lado */
 .label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .label b{color:var(--ink);font-weight:500}
 .tools{display:flex;gap:6px;flex-wrap:wrap}

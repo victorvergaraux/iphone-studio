@@ -13,7 +13,7 @@ import { curShot, flyTo, playPresentation, presentationLength, setCurShot, setSh
 import { beginExport, endExport, exportSize, fitCanvasCss, layout, recording, setRecording } from '../three/format.js';
 import { offline } from '../three/loop.js';
 import { pane } from '../ui/pane.js';
-import { renderShots } from '../ui/strips.js';
+import { renderShots, syncReplace } from '../ui/strips.js';
 import { offer } from './export.js';
 import { cancelOffline, setCancelOffline } from './offline.js';
 
@@ -35,7 +35,7 @@ $('#projFile').onchange = async e => {
 // Re-aplica TODO el estado de P a la escena (lo que normalmente hacen los handlers del panel)
 async function applyAll(){
   bgColor.set(P.scene.bg); mFloor.color.set(P.scene.floor); mBlocks.color.set(P.scene.blocks); mAccent.color.set(P.scene.accent);
-  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; applyObjPos();
+  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; applyObjPos(); syncReplace();
   renderer.toneMappingExposure = P.env.exposure;
   renderer.toneMapping = { neutral:THREE.NeutralToneMapping, agx:THREE.AgXToneMapping, aces:THREE.ACESFilmicToneMapping }[P.env.tone] ?? THREE.NeutralToneMapping;
   sun.castShadow = P.shadow.on; sun.intensity = P.shadow.strength; sun.shadow.radius = P.shadow.size;

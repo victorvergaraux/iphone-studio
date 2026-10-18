@@ -1,5 +1,7 @@
 import { $, toast } from '../core/utils.js';
-import { addItem, cur, goTo, items, maxTex, sel, setSel } from './carousel.js';
+import { P } from '../core/params.js';
+import { screenMat } from '../three/screen.js';
+import { addItem, clearCar, cur, goTo, items, maxTex, setCur, setNextIdx, setSel } from './carousel.js';
 import { refreshEdit } from '../ui/pane.js';
 import { addShot, renderStrip, togglePres } from '../ui/strips.js';
 
@@ -12,7 +14,7 @@ function fitToMax(img){
 }
 export async function loadFiles(list){
   const files = [...list].filter(f => /^(image|video)\//.test(f.type)); if (!files.length) return toast('Formato no soportado: usa imagen o video');
-  const firstNew = items.length;
+  let firstNew = items.length;
   for (const f of files) {
     const url = URL.createObjectURL(f);
     if (f.type.startsWith('video/')) {
@@ -24,7 +26,11 @@ export async function loadFiles(list){
       try { await img.decode(); addItem(fitToMax(img), f.name, { thumb:url }); } catch { toast(`No se pudo leer ${f.name}`); }
     }
   }
-  if (items.length > firstNew) { setSel(firstNew); renderStrip(); refreshEdit(); goTo(firstNew); toast(`${items.length - firstNew} pantalla(s) agregada(s)`); }
+  if (items.length > firstNew && P.car.replaceAll) {   // Replace all: se descartan las anteriores solo si algo nuevo cargó bien
+    for (const it of items.splice(0, firstNew)) { it.tex.dispose(); if (it.isVideo) it.src.pause(); }
+    clearCar(); setNextIdx(-1); screenMat.uniforms.uProgress.value = 0; setCur(0); firstNew = 0;
+  }
+  if (items.length > firstNew) { setSel(firstNew); renderStrip(); refreshEdit(); goTo(firstNew); toast(`${items.length - firstNew} pantalla(s) ${P.car.replaceAll ? 'cargada(s)' : 'agregada(s)'}`); }
 }
 let dragN = 0;
 addEventListener('dragenter', e => { e.preventDefault(); dragN++; $('#drop').classList.add('on'); });
