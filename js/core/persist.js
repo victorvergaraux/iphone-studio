@@ -16,9 +16,10 @@ if (saved?.P) for (const g in P) for (const k in P[g]) {
   const v = saved.P[g]?.[k]; if (v !== undefined && typeof v === typeof P[g][k]) P[g][k] = v;
 }
 if (legacy && saved?.shots?.every(s => s.example)) saved.shots = null; // tomas de ejemplo viejas (FOV 14) → las nuevas
-export let saveT = 0;
+export let saveT = 0, wiped = false;
 function saveNow(){
   clearTimeout(saveT); saveT = 0;
+  if (wiped) return; // tras un reset no se vuelve a escribir: el pagehide del reload restauraba el estado viejo
   try { localStorage.setItem(STORE_KEY, JSON.stringify({ P, shots: hooks.getShots().map(({ p, t, fov, example, name }) => ({ p, t, fov, example, name })) })); } catch {}
 }
 /* Throttle (no debounce): el bug era que el auto-scroll del carrusel refresca el panel en cada cuadro y cada
@@ -27,3 +28,11 @@ function saveNow(){
 export function saveSoon(){ if (!saveT) saveT = setTimeout(saveNow, 300); }
 addEventListener('pagehide', saveNow);                                            // al recargar/cerrar
 document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+
+/* Reset total (kill cache): borra TODOS los ajustes y tomas guardados (v1 y v2) y recarga con los defaults de P.
+   Hay que bloquear saveNow antes de recargar: pagehide/visibilitychange lo llaman y volvería a escribir el estado actual. */
+export function resetAll(){
+  wiped = true; clearTimeout(saveT); saveT = 0;
+  try { localStorage.removeItem(STORE_KEY); localStorage.removeItem('mockup-studio:v1'); } catch {}
+  location.reload();
+}

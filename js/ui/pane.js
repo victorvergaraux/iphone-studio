@@ -3,9 +3,9 @@ import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import { $, DUR, EASE, toast } from '../core/utils.js';
 import { P } from '../core/params.js';
-import { STORE_KEY, saveSoon, saveT } from '../core/persist.js';
+import { resetAll, saveSoon } from '../core/persist.js';
 import { camera, gradePass, gtao, renderer } from '../three/renderer.js';
-import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyFloorMode, applyObjPos, applySurfaceTex, placeKey, sun } from '../three/scene.js';
+import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, OBJ_PRESETS, applyFloorMode, applyObjPos, applyObjPreset, applySurfaceTex, placeKey, sun } from '../three/scene.js';
 import { HDRI, applyBackground, applyEnvIntensity, loadEnv, scheduleEnv } from '../three/hdri.js';
 import { brushedTex, makeBrushed } from '../three/metal.js';
 import { S_ASPECT, anchor, mFrame, makeButtons } from '../three/iphone.js';
@@ -77,6 +77,8 @@ tSet.addBinding(P.scene, 'texScale', { label:'Scale', min:0.05, max:4, step:0.01
 const objPt = k => ({ get x(){ return P.scene[k + 'X']; }, set x(v){ P.scene[k + 'X'] = v; },
                       get y(){ return P.scene[k + 'Y']; }, set y(v){ P.scene[k + 'Y'] = v; },
                       get z(){ return P.scene[k + 'Z']; }, set z(v){ P.scene[k + 'Z'] = v; } });
+tObjs.addBinding(P.scene, 'objPreset', { label:'Preset', options:Object.fromEntries(Object.entries(OBJ_PRESETS).map(([k, v]) => [v.label, k])) })
+  .on('change', () => { applyObjPreset(); pane.refresh(); });
 for (const [k, label] of [['tower', 'Tower'], ['block', 'Block'], ['cyl', 'Cylinder'], ['sphere', 'Sphere']])
   tObjs.addBinding({ p: objPt(k) }, 'p', { label, picker:'inline', expanded:false,
     x:{ min:-8, max:8, step:0.05 }, y:{ min:0, max:6, step:0.05 }, z:{ min:-8, max:8, step:0.05 } })
@@ -229,11 +231,9 @@ fUI.addBinding(UI_TMP, 'guideDim', { label:'Dim', min:0, max:1, step:0.01 })
 fUI.addBinding(UI_TMP, 'showGrid', { label:'Grid' }).on('change', e => document.body.classList.toggle('no-grid', !e.value));
 fUI.addBinding(UI_TMP, 'showFrame', { label:'Frame' }).on('change', e => document.body.classList.toggle('no-frame', !e.value));
 fUI.addBlade({ view:'separator' });
-row(fUI, ['Export', 'Import', 'Reset'], [
-  exportProject,
-  () => $('#projFile').click(),
-  () => { clearTimeout(saveT); try { localStorage.removeItem(STORE_KEY); } catch {} location.reload(); },
-], 'JSON');
+row(fUI, ['Export', 'Import'], [exportProject, () => $('#projFile').click()], 'JSON');
+// Kill cache: formatea todos los ajustes y tomas guardados en el navegador (pide confirmación; no se puede deshacer)
+fUI.addButton({ title:'Clear', label:'Cache' }).on('click', () => { if (confirm('¿Borrar todos los ajustes y tomas guardados y volver a los valores iniciales?')) resetAll(); });
 // Arranque limpio: todo colapsado salvo Scene y Shots (lo que más se usa al componer)
 pane.children.forEach(c => { if ('expanded' in c && c !== fS && c !== fT) c.expanded = false; });
 pane.on('change', () => { if (!syncing) saveSoon(); }); // cambios del usuario → guardado (los refrescos internos no cuentan)

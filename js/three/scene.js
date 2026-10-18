@@ -108,6 +108,20 @@ export function applyObjPos(){
 }
 applyObjPos();
 
+// Presets de ubicación [x, y, z] de los 4 objetos. Los props (cilindro y esfera) descansan sobre la losa (|x| < 2.2, |z| < 1.4): su y ya
+// incluye SLAB_TOP; torre y bloque descansan en el piso.
+export const OBJ_PRESETS = {
+  base:  { label:'Base',  tower:[-2.7, 1.7, -1.9], block:[2.5, 0.14, 1.9],  cyl:[1.7, 1.175, -0.95], sphere:[-1.25, 0.82, 0.85] },
+  tight: { label:'Tight', tower:[0, 1.7, -2.5],    block:[0, 0.14, 1.9],    cyl:[-0.9, 1.18, -0.5],  sphere:[0.55, 0.82, 1] },
+  // Frame: torre alta a la izquierda y escalón bajo a la derecha enmarcan la losa; los props se escalonan en profundidad
+  frame: { label:'Frame', tower:[-3.4, 1.7, -0.6], block:[3.6, 0.14, 0.4], cyl:[1.1, 1.175, -0.9],  sphere:[-0.9, 0.82, 0.95] },
+};
+export function applyObjPreset(){
+  const d = OBJ_PRESETS[P.scene.objPreset]; if (!d) return;
+  for (const k in BG_OBJS) [P.scene[k + 'X'], P.scene[k + 'Y'], P.scene[k + 'Z']] = d[k];
+  applyObjPos();
+}
+
 // Real = material físico con manchas (rugosidad/metalness) · Flat = Standard mate, igual que los objetos
 export function applyFloorMode(){
   const m = P.scene.floorReal ? mFloor : mFloorFlat;
