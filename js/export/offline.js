@@ -101,7 +101,7 @@ async function renderVideo(cand, cfg, { w, h, fps, len, usePres }){
   } catch (e) { encErr = encErr || e; }
   finally {
     try { encoder.state !== 'closed' && encoder.close(); } catch {}
-    gsap.ticker.add(gsap.updateRoot);
+    gsap.updateRoot(gsap.ticker.time); gsap.ticker.add(gsap.updateRoot); // re-sincroniza el reloj virtual con el real antes de devolver el control
     setOffline(false); setRecording(false);
     $('#rec').hidden = true; $('#prog').classList.remove('on'); stopPresentation();
     document.body.classList.remove('recording'); canvas.style.cssText = ''; endExport(); scheduleCar();

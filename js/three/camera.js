@@ -95,6 +95,8 @@ function camTween(shot, dur, extra = {}){
   });
 }
 export let camTweening = false, flyTween = null;
+// Move por debajo de este umbral = corte seco (evita que un 0.0 "casi cero" del slider dispare un tween de duración ínfima)
+const CUT_BELOW = 0.01;
 // Corte seco a una toma: posición, objetivo y FOV en el mismo cuadro, y se vacía la inercia de OrbitControls
 function cutTo(s){
   Object.assign(camProxy, shotVars(s)); applyProxy();
@@ -104,7 +106,7 @@ export function flyTo(i, dur = P.cam.flyDur){
   stopPresentation(); flyTween?.kill();
   curShot = i; hooks.renderShots();
   // movimiento 0 = cortes instantáneos también al elegir una toma de la lista
-  if (P.shots.transition <= 0) { camTweening = false; cutTo(shots[i]); P.cam.fov = camera.fov; hooks.refreshPane(); return; }
+  if (P.shots.transition < CUT_BELOW) { camTweening = false; cutTo(shots[i]); P.cam.fov = camera.fov; hooks.refreshPane(); return; }
   camTweening = true;
   flyTween = camTween(shots[i], dur, { onComplete(){ camTweening = false; flyTween = null; P.cam.fov = camera.fov; hooks.refreshPane(); } });
 }
@@ -119,10 +121,13 @@ function pickHalfShots(){
 function buildPresentation(loop){
   const tl = gsap.timeline(), half = pickHalfShots();
   shots.forEach((s, i) => {
-    const k = half.has(i) ? 0.5 : 1, tr = P.shots.transition * k, hold = P.shots.hold * k;
-    tl.call(() => { curShot = i; hooks.renderShots(); });
-    if (tr > 0) tl.add(camTween(s, tr, { paused:false }));
-    else tl.call(() => cutTo(s)); // corte instantáneo, sin interpolar
+    const k = half.has(i) ? 0.5 : 1, tr = P.shots.transition < CUT_BELOW ? 0 : P.shots.transition * k, hold = P.shots.hold * k;
+    const mark = () => { curShot = i; hooks.renderShots(); };
+    if (tr > 0) { tl.call(mark); tl.add(camTween(s, tr, { paused:false })); }
+    // Corte instantáneo, sin interpolar. La primera toma se aplica YA (no vía tl.call en t=0): GSAP no dispara llamadas en la
+    // posición 0 del primer render, así que en el export cuadro a cuadro el cuadro 0 salía con la cámara anterior.
+    else if (i === 0) { mark(); cutTo(s); }
+    else { tl.call(mark); tl.call(() => cutTo(s)); }
     // piso de 50 ms: con movimiento 0 y pausa 0 el timeline duraría 0 s y el loop se re-crearía sin parar
     tl.to({}, { duration:Math.max(hold, tr > 0 ? 0 : 0.05) });
   });
@@ -140,7 +145,7 @@ export function stopPresentation(){
 }
 export function presentationLength(){
   const n = P.shots.randomHalf && shots.length > 1 ? Math.min(P.shots.halfCount, shots.length - 1) : 0; // tomas a la mitad
-  return (shots.length - n * 0.5) * (P.shots.transition + P.shots.hold);
+  return (shots.length - n * 0.5) * ((P.shots.transition < CUT_BELOW ? 0 : P.shots.transition) + P.shots.hold);
 }
 
 // Los importadores no pueden reasignar un binding: se expone un setter.
