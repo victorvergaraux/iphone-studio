@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { $, DUR, EASE, toast } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { camera, canvas, gradePass, gtao, renderer } from '../three/renderer.js';
-import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyObjPos, placeKey, sun } from '../three/scene.js';
+import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyFloorMode, applyObjPos, applySurfaceTex, placeKey, sun } from '../three/scene.js';
 import { applyBackground, applyEnvIntensity, loadEnv } from '../three/hdri.js';
 import { makeBrushed } from '../three/metal.js';
 import { anchor, mFrame, makeButtons } from '../three/iphone.js';
@@ -35,7 +35,7 @@ $('#projFile').onchange = async e => {
 // Re-aplica TODO el estado de P a la escena (lo que normalmente hacen los handlers del panel)
 async function applyAll(){
   bgColor.set(P.scene.bg); mFloor.color.set(P.scene.floor); mBlocks.color.set(P.scene.blocks); mAccent.color.set(P.scene.accent);
-  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; applyObjPos(); syncReplace();
+  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; applyObjPos(); applySurfaceTex(); applyFloorMode(); syncReplace();
   renderer.toneMappingExposure = P.env.exposure;
   renderer.toneMapping = { neutral:THREE.NeutralToneMapping, agx:THREE.AgXToneMapping, aces:THREE.ACESFilmicToneMapping }[P.env.tone] ?? THREE.NeutralToneMapping;
   sun.castShadow = P.shadow.on; sun.intensity = P.shadow.strength; sun.shadow.radius = P.shadow.size;

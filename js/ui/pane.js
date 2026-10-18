@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
-import { $, DUR, EASE } from '../core/utils.js';
+import { $, DUR, EASE, toast } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { STORE_KEY, saveSoon, saveT } from '../core/persist.js';
 import { camera, gradePass, gtao, renderer } from '../three/renderer.js';
-import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyObjPos, placeKey, sun } from '../three/scene.js';
+import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyFloorMode, applyObjPos, applySurfaceTex, placeKey, sun } from '../three/scene.js';
 import { HDRI, applyBackground, applyEnvIntensity, loadEnv, scheduleEnv } from '../three/hdri.js';
 import { brushedTex, makeBrushed } from '../three/metal.js';
 import { S_ASPECT, anchor, mFrame, makeButtons } from '../three/iphone.js';
 import { applyTransitionMode, island, mGlass, screenMat } from '../three/screen.js';
 import { applySmudgeScale, prop, rebuildShape, setPose, smudgeU } from '../three/smudge.js';
 import { cur, goTo, items, nextIdx, scheduleCar, scrollTween, sel } from '../screens/carousel.js';
-import { CAM_EASES, SHOT_PRESETS, applyShotPreset, camTweening } from '../three/camera.js';
+import { CAM_EASES, SHOT_PRESETS, applyShotPreset, camTweening, shots } from '../three/camera.js';
 import { FORMATS, INFO, infoBinding, layout, panelOpen, setInfoBinding, setPanel } from '../three/format.js';
 import { addShot, deleteShot, togglePres, updateShot } from './strips.js';
 import { snapshot } from '../export/export.js';
@@ -65,6 +65,13 @@ tSet.addBinding(P.scene, 'accent', { label:'Props' }).on('change', e => mAccent.
 tSet.addBlade({ view:'separator' });
 tSet.addBinding(P.scene, 'showBlocks', { label:'Solids' }).on('change', e => { blocksG.visible = e.value; prop.visible = e.value && P.phone.pose === 'lean'; });
 tSet.addBinding(P.scene, 'showFloor', { label:'Ground' }).on('change', e => { ground.visible = e.value; });
+tSet.addBlade({ view:'separator' });
+tSet.addBinding(P.scene, 'floorReal', { label:'Real' }).on('change', applyFloorMode); // piso y losa: físico con manchas / Standard plano
+tSet.addBinding(P.scene, 'rough', { label:'Rough', min:0, max:1, step:0.01 }).on('change', applySurfaceTex); // rugosidad base de piso y losa
+tSet.addBinding(P.scene, 'metal', { label:'Metal', min:0, max:1, step:0.01 }).on('change', applySurfaceTex);  // metalness base
+tSet.addBinding(P.scene, 'texRough', { label:'Map R', min:0, max:1, step:0.01 }).on('change', applySurfaceTex); // manchas en roughnessMap
+tSet.addBinding(P.scene, 'texMetal', { label:'Map M', min:0, max:1, step:0.01 }).on('change', applySurfaceTex); // manchas en metalnessMap
+tSet.addBinding(P.scene, 'texScale', { label:'Scale', min:0.05, max:4, step:0.01 }).on('change', applySurfaceTex);
 
 /* Objs: posición XYZ (picker 3D) de torre, bloque, cilindro y esfera. Proxy con accesores sobre las claves planas de P. */
 const objPt = k => ({ get x(){ return P.scene[k + 'X']; }, set x(v){ P.scene[k + 'X'] = v; },
@@ -182,6 +189,13 @@ fT.addBinding(P.shots, 'halfCount', { label:'Count', min:1, max:2, step:1 });
 row(fT, ['Save [S]', 'Update', 'Delete'], [addShot, updateShot, deleteShot]);
 fT.addBinding(P.shots, 'preset', { label:'Preset', options:Object.fromEntries(Object.entries(SHOT_PRESETS).map(([k, v]) => [v.label, k])) });
 fT.addButton({ title:'Load preset' }).on('click', applyShotPreset);
+// Copy JSON: lista de tomas (mismo formato que el proyecto: p = posición, t = target, fov, name) al portapapeles
+fT.addButton({ title:'Copy JSON' }).on('click', async () => {
+  const json = JSON.stringify(shots.map(({ p, t, fov, name }) => ({ p, t, fov, name })), null, 2);
+  try { await navigator.clipboard.writeText(json); }
+  catch { const ta = Object.assign(document.createElement('textarea'), { value:json }); document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast(`${shots.length} toma(s) copiadas como JSON`);
+});
 export const fList = fT.addFolder({ title:'List' });
 export let shotBtns = [];
 

@@ -2,7 +2,7 @@ import { reduced } from './utils.js';
 
 /* ───────────────────────── Parámetros (fuente única de verdad para Tweakpane) ───────────────────────── */
 export const P = {
-  scene: { preset:'light', bg:'#e9e7e2', floor:'#e9e7e2', blocks:'#e6e3dd', accent:'#c9c5bc', showBlocks:true, showFloor:true,
+  scene: { preset:'light', bg:'#e9e7e2', floor:'#e9e7e2', blocks:'#e6e3dd', accent:'#c9c5bc', showBlocks:true, showFloor:true, floorReal:true, rough:1, metal:0, texRough:0.6, texMetal:0.6, texScale:0.4,
     towerX:-2.7, towerY:1.7, towerZ:-1.9, blockX:2.5, blockY:0.14, blockZ:1.9, cylX:1.7, cylY:1.175, cylZ:-0.95, sphereX:-1.25, sphereY:0.82, sphereZ:0.85 },
   env:   { preset:'hall', intensity:1, normalize:true, rotation:0, exposure:1, tone:'neutral', background:'solid', blur:0.35, bgIntensity:1 },
   shadow:{ on:true, strength:1.2, size:3, minElev:22, ao:1, aoRadius:0.3 },
