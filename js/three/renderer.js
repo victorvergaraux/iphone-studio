@@ -33,13 +33,18 @@ THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fra
     float tanA = tan(radians(max(lightDeg, 0.05)));
     float mapSize = float(textureSize(map, 0).x);
     float texelW = PCSS_FRUSTUM / mapSize;                // tamaño de un texel en mundo → resultado independiente de la resolución
-    float phi = pcssHash(gl_FragCoord.xy) * 6.2831853;     // rotación aleatoria por píxel: cambia banding por ruido fino
+    // rotación aleatoria por píxel: cambia banding por ruido fino. La fracción de radius·1000 es una "semilla" por muestra
+    // de la acumulación progresiva (js/three/accum.js suma k·0.00037° al radio): rota el patrón en cada muestra para que el
+    // ruido se promedie. Con la semilla en 0 (cualquier render normal con radio entero) el resultado es el de siempre.
+    float phi = pcssHash(gl_FragCoord.xy + vec2(fract(lightDeg * 1000.0) * 97.0)) * 6.2831853;
+    // textureLod(…, 0.0) en vez de texture2D: el mapa de sombras no tiene mipmaps (mismo resultado) y así no se piden derivadas implícitas
+    // dentro de bucles tras un return condicional (aviso X3595 del compilador HLSL/ANGLE: derivadas indefinidas).
     // 1) Búsqueda de oclusores: profundidad media de lo que bloquea la luz
     float searchR = tanA * 2.0 / texelW, sum = 0.0, cnt = 0.0;
     vec2 dir = vec2(cos(phi), sin(phi));
     float searchUv = searchR / mapSize;
     for (int i = 0; i < PCSS_SAMPLES; i++) {
-      float d = unpackRGBAToDepth(texture2D(map, sc.xy + dir * (pcssRad(i) * searchUv)));
+      float d = unpackRGBAToDepth(textureLod(map, sc.xy + dir * (pcssRad(i) * searchUv), 0.0));
       if (d < sc.z) { sum += d; cnt += 1.0; }
       dir = pcssNext(dir);
     }
@@ -51,7 +56,7 @@ THREE.ShaderChunk.shadowmap_pars_fragment = THREE.ShaderChunk.shadowmap_pars_fra
     float lit = 0.0, filterUv = filterR / mapSize;
     dir = vec2(cos(phi), sin(phi)); // misma rotación por píxel que en la búsqueda
     for (int i = 0; i < PCSS_SAMPLES; i++) {
-      lit += step(sc.z, unpackRGBAToDepth(texture2D(map, sc.xy + dir * (pcssRad(i) * filterUv))));
+      lit += step(sc.z, unpackRGBAToDepth(textureLod(map, sc.xy + dir * (pcssRad(i) * filterUv), 0.0)));
       dir = pcssNext(dir);
     }
     return lit / float(PCSS_SAMPLES);
@@ -78,7 +83,10 @@ scene.environmentIntensity = P.env.intensity;
 export const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.dampingFactor = 0.06;
 controls.minDistance = 1.2; controls.maxDistance = 30;
-controls.maxPolarAngle = Math.PI * 0.49;
+// Se puede orbitar por DEBAJO del objetivo (contrapicada, cámara baja mirando hacia arriba): el límite ya no es el ángulo polar
+// sino una altura mínima de cámara (MIN_CAM_Y, se aplica en loop.js) para no atravesar el piso.
+controls.maxPolarAngle = Math.PI * 0.95;
+export const MIN_CAM_Y = 0.08;
 
 // Render target con MSAA (samples:4) porque el composer reemplaza el antialias del canvas
 const rt = new THREE.WebGLRenderTarget(16, 16, { type: THREE.HalfFloatType, samples: 4 });

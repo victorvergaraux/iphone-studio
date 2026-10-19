@@ -8,12 +8,16 @@ import { toast } from '../core/utils.js';
 
 /* ── Carga de HDRI: @pmndrs/assets publica cada EXR como módulo JS (data URI) → el CSP lo admite como script ── */
 export const HDRI = ['studio','warehouse','lobby','apartment','hall','lab','workshop','city','sunset','dawn','sunrise','night','park','forest','venice','bridge','esplanade','sky'];
+// HDRI vendorizados en vendor/ (los usa la app sin red: el por defecto, P.env.preset). El resto se baja de la CDN
+// bajo demanda y el service worker (sw.js) lo cachea en runtime. Regenerar con tools/vendor.mjs.
+const LOCAL_HDRI = ['hall'];
+const CDN_HDRI = 'https://cdn.jsdelivr.net/npm/@pmndrs/assets@1.7.0/hdri/';
 const exr = new EXRLoader().setDataType(THREE.FloatType);
 const hdriCache = {};
 let envSrc = null, envTex = null, envRT = null, envToken = 0, envNorm = 1;
 async function fetchHdri(name){
   if (hdriCache[name]) return hdriCache[name];
-  const mod = await import(`https://cdn.jsdelivr.net/npm/@pmndrs/assets@1.7.0/hdri/${name}.exr.js`);
+  const mod = LOCAL_HDRI.includes(name) ? await import(`../../vendor/hdri/${name}.exr.js`) : await import(/* @vite-ignore */ `${CDN_HDRI}${name}.exr.js`);
   const bin = atob(mod.default.slice(mod.default.indexOf(',') + 1)), u8 = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
   return hdriCache[name] = exr.parse(u8.buffer); // { width, height, data: Float32Array RGBA, fila 0 = abajo }
@@ -23,8 +27,9 @@ export async function loadEnv(name){
   try { const src = await fetchHdri(name); if (tok !== envToken) return; envSrc = src; buildEnv(); }
   catch (err) {
     console.warn('HDRI', err);
-    if (!envRT) { envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); scene.environment = envRT.texture; placeKey(); }
-    toast('No se pudo cargar el HDRI; uso un estudio de respaldo');
+    // Sin red (o CDN caída): si ya hay un entorno activo se conserva; solo si no hay ninguno se usa el estudio de respaldo
+    if (!envRT) { envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); scene.environment = envRT.texture; placeKey(); toast('No se pudo cargar el HDRI; uso un estudio de respaldo'); }
+    else toast(`No se pudo cargar «${name}» (¿sin conexión?); conservo el HDRI actual`);
   }
 }
 /* Rotar un equirectangular en Y = desplazar columnas. Lo hacemos en CPU para que la luz derivada y el

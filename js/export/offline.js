@@ -6,7 +6,8 @@ import { playPresentation, presentationLength, shots, stopPresentation } from '.
 import { beginExport, endExport, exportSize, fitCanvasCss, recording, setRecording } from '../three/format.js';
 import { clock, offline, renderFrame, setOffline } from '../three/loop.js';
 import { offer } from './export.js';
-import { startRecordingRealtime } from './project.js';
+import { beginVideoSync, endVideoSync, syncVideosTo } from './videosync.js';
+import { noRecordingNotice, realtimeMime, startRecordingRealtime } from './project.js';
 
 /* ── Video cuadro a cuadro (WebCodecs + mp4-muxer) ──
    Reloj virtual: GSAP deja de leer el reloj real (ticker.remove(updateRoot)) y avanzamos exactamente 1/fps por
@@ -43,27 +44,43 @@ function videoCandidates(w, h, fps){
 export async function startRecording(){
   if (recording) return;
   if (P.exp.mode === 'realtime') return startRecordingRealtime();
-  if (!('VideoEncoder' in window) || !window.Mp4Muxer || !window.WebMMuxer) { toast('Tu navegador no soporta render cuadro a cuadro: uso tiempo real'); return startRecordingRealtime(); }
+  // Sin WebCodecs o sin las librerías de muxing: se explica QUÉ falta y qué se usa en su lugar (tiempo real), o la alternativa PNG
+  const lacks = !('VideoEncoder' in window) ? 'Tu navegador no tiene VideoEncoder (WebCodecs; p. ej. Safari o Firefox antiguos)'
+    : (!window.Mp4Muxer || !window.WebMMuxer) ? 'No se cargaron las librerías de video MP4/WebM (¿sin conexión?)' : null;
+  if (lacks) {
+    if (!realtimeMime()) return noRecordingNotice(`${lacks} y tampoco hay grabación en tiempo real`);
+    toast(`${lacks}: grabo en tiempo real`, 4500); return startRecordingRealtime();
+  }
   const usePres = P.exp.playShots && shots.length > 0;
   const len = P.exp.length || (usePres ? presentationLength() : 15);
   const fps = P.exp.fps, [w, h] = exportSize();
-  const errors = [];
+  const errors = []; let attempted = 0, h264Skipped = false;
   for (const cand of videoCandidates(w, h, fps)) {
     const cfg = { codec:cand.codec, width:w, height:h, bitrate:P.exp.mbps * 1e6, framerate:fps, hardwareAcceleration:cand.hw,
                   ...(cand.mux === 'avc' ? { avc:{ format:'avc' } } : {}) };
-    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(`${cand.label}: no soportado (${cand.codec} ${w}x${h}@${fps})`); continue; } }
-    catch (e) { errors.push(`${cand.label}: ${e.message}`); continue; }
+    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(`${cand.label}: no soportado (${cand.codec} ${w}x${h}@${fps})`); h264Skipped ||= cand.ext === 'mp4'; continue; } }
+    catch (e) { errors.push(`${cand.label}: ${e.message}`); h264Skipped ||= cand.ext === 'mp4'; continue; }
+    attempted++;
+    if (cand.ext === 'webm' && h264Skipped) toast('Tu navegador no admite H.264 a esta resolución: exporto en WebM', 4500);
     const res = await renderVideo(cand, cfg, { w, h, fps, len, usePres });
     if (res.cancelled) return toast('Render cancelado');
     if (res.blob) {
       if (errors.length) console.warn('Export de video, intentos fallidos:', errors);
-      return offer(res.blob, `mockup-${P.exp.format.replace(':', 'x')}-${w}x${h}-${len.toFixed(0)}s-${fps}fps.${cand.ext}`);
+      await offer(res.blob, `mockup-${P.exp.format.replace(':', 'x')}-${w}x${h}-${len.toFixed(0)}s-${fps}fps.${cand.ext}`);
+      // Con descarga directa offer() ya avisa ("Archivo guardado"); si cayó al modal de vista previa, avisamos aquí
+      if (document.querySelector('.modal')) toast('Archivo listo');
+      return;
     }
     errors.push(`${cand.label}: ${res.error}`); console.warn('Video:', cand.label, res.error);
     toast(`${cand.label} falló, reintentando con otro códec…`);
   }
   console.error('Export de video falló:', errors);
-  toast(`No se pudo exportar el video. ${errors.at(-1) || ''}`);
+  // Ningún códec admitido (ni se llegó a renderizar): lo más útil es grabar en tiempo real; si tampoco, ofrecer PNG
+  if (!attempted) {
+    if (realtimeMime()) { toast('Ningún códec de video cuadro a cuadro es compatible aquí: grabo en tiempo real', 4500); return startRecordingRealtime(); }
+    return noRecordingNotice('Este navegador no admite ningún códec de video');
+  }
+  noRecordingNotice(`No se pudo exportar el video (${errors.at(-1) || 'error de codificación'})`);
 }
 
 /* Un intento completo de render cuadro a cuadro con un códec. Reloj virtual: GSAP deja de leer el reloj real
@@ -83,19 +100,28 @@ async function renderVideo(cand, cfg, { w, h, fps, len, usePres }){
   document.body.classList.add('recording'); beginExport(w, h, 1); fitCanvasCss(w, h);
   gsap.ticker.remove(gsap.updateRoot);
   const g0 = gsap.ticker.time, t0 = clock.getElapsedTime();
+  beginVideoSync(); // pausa los <video> fuente: se posicionan por cuadro según el reloj virtual
   stopPresentation(); resetCarousel(); // el video siempre arranca en la pantalla 1
   if (usePres) playPresentation(P.exp.length > 0);
   $('#rec').hidden = false; $('#prog').style.transform = 'scaleX(0)'; $('#prog').classList.add('on');
+  // HUD: el botón del marcado se llama «Detener» (modo realtime); en offline cancela el render, así que se rotula «Cancelar»
+  const stopBtn = $('#recStop'), stopLabel = stopBtn.textContent, tStart = performance.now();
+  stopBtn.textContent = 'Cancelar';
+  const onCancel = () => { stopBtn.textContent = 'Cancelando…'; }; // la lógica de cancelación sigue en project.js
+  stopBtn.addEventListener('click', onCancel);
   try {
     for (let i = 0; i < total && !cancelOffline && !encErr; i++) {
       const vt = i / fps;
       gsap.updateRoot(g0 + vt);
+      await syncVideosTo(vt); // videos al cuadro que toca (espera a que esté decodificado)
       renderFrame(t0 + vt);
       // alpha:'discard' → el canvas tiene alfa (para PNG transparente); H.264/VP9 no aceptan alfa y fallaban al codificar
       const frame = new VideoFrame(canvas, { timestamp:Math.round(i * 1e6 / fps), duration:Math.round(1e6 / fps), alpha:'discard' });
       encoder.encode(frame, { keyFrame: i % (fps * 2) === 0 });
       frame.close();
-      $('#recTime').textContent = `${cand.ext.toUpperCase()} · ${fmtT(vt)} / ${fmtT(len)} · ${i + 1}/${total}`;
+      // Porcentaje · cuadros · ETA = tiempo transcurrido / cuadros hechos × cuadros restantes
+      const done = i + 1, eta = (performance.now() - tStart) / 1000 / done * (total - done);
+      $('#recTime').textContent = `${cand.ext.toUpperCase()} · ${Math.floor(done / total * 100)}% · ${done}/${total} cuadros · faltan ${fmtT(Math.ceil(eta))}`;
       $('#prog').style.transform = `scaleX(${(i + 1) / total})`;
       while (encoder.encodeQueueSize > 6 && !encErr) await sleep(4);
       await sleep(0);
@@ -103,9 +129,11 @@ async function renderVideo(cand, cfg, { w, h, fps, len, usePres }){
     if (!encErr && !cancelOffline) await encoder.flush();
   } catch (e) { encErr = encErr || e; }
   finally {
+    endVideoSync();
     try { encoder.state !== 'closed' && encoder.close(); } catch {}
     gsap.updateRoot(gsap.ticker.time); gsap.ticker.add(gsap.updateRoot); // re-sincroniza el reloj virtual con el real antes de devolver el control
     setOffline(false); setRecording(false);
+    stopBtn.removeEventListener('click', onCancel); stopBtn.textContent = stopLabel;
     $('#rec').hidden = true; $('#prog').classList.remove('on'); stopPresentation();
     document.body.classList.remove('recording'); canvas.style.cssText = ''; endExport(); scheduleCar();
   }

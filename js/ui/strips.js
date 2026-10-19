@@ -3,10 +3,11 @@ import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { screenMat } from '../three/screen.js';
 import { carPlaying, clearCar, cur, goTo, items, nextIdx, scheduleCar, sel, setCarPlaying, setCur, setNextIdx, setSel } from '../screens/carousel.js';
-import { curShot, flyTo, playPresentation, presTL, setCurShot, shots, snap, stopPresentation } from '../three/camera.js';
-import { btnPlay, fList, refreshEdit, setShotBtns, shotBtns } from './pane.js';
+import { playPresentation, presTL, stopPresentation } from '../three/camera.js';
+import { refreshEdit } from './pane.js';
 import { loadFiles } from '../screens/load.js';
 import { hooks } from '../core/hooks.js';
+import { syncScreens } from '../screens/store.js';
 
 /* ───────────────────────── UI: strips ───────────────────────── */
 export function renderStrip(){
@@ -22,32 +23,18 @@ export function renderStrip(){
   });
   $('#scrCount').textContent = String(items.length).padStart(2, '0');
 }
-const pad2 = n => String(n).padStart(2, '0');
-// Lista de tomas como botones de Tweakpane: se reconstruye al cambiar (dispose + add mantiene el orden)
+// Las tomas ya no se listan en el panel avanzado: solo se guarda y se avisa a la card «Cinemática» para que se repinte
 export function renderShots(){
-  shotBtns.forEach(b => b.dispose()); setShotBtns([]);
-  fList.title = `List · ${pad2(shots.length)}`;
-  shots.forEach((s, i) => shotBtns.push(
-    fList.addButton({ label:`FOV ${s.fov.toFixed(0)}`, title:`${i === curShot ? '● ' : ''}T${pad2(i + 1)}${s.name ? ' · ' + s.name : ''}` }).on('click', () => flyTo(i))
-  ));
-  saveSoon();
+  saveSoon(); hooks.shotEditorRefresh?.();
 }
-export function addShot(){ shots.push(snap()); setCurShot(shots.length - 1); renderShots(); toast(`Toma T${pad2(shots.length)} guardada`); }
-export function updateShot(){
-  if (curShot < 0 || !shots[curShot]) return toast('Elige una toma de la lista primero');
-  shots[curShot] = { ...snap(), name:shots[curShot].name }; renderShots(); toast(`Toma T${pad2(curShot + 1)} actualizada`);
-}
-export function deleteShot(){
-  if (curShot < 0 || !shots[curShot]) return toast('Elige una toma de la lista primero');
-  stopPresentation(); const n = curShot + 1; shots.splice(curShot, 1); setCurShot(-1); renderShots(); toast(`Toma T${pad2(n)} eliminada`);
-}
+// Operaciones de tomas: viven en camera.js (todas pasan por commitShots y avisan a hooks.onShotsChange); se reexportan aquí para el panel, el onboarding y los atajos
+export { addShot, updateShot, deleteShot, duplicateShot, moveShot, renameShot, setShotTiming } from '../three/camera.js';
 export function togglePres(){ presTL ? stopPresentation() : playPresentation(); }
 export function setPlayBtn(on){
-  btnPlay.title = on ? '■ Stop  [Space]' : '▶ Play  [Space]';
-  // Botón Play del rail: mismo estado (ON = tintado + icono de stop), sincronizado desde aquí
+  // Botón de cinemática del rail (claqueta, para no confundirlo con el play del carrusel): mismo estado (ON = tintado + icono de stop), sincronizado desde aquí
   const r = $('#railPlay'); if (!r) return;
-  r.setAttribute('aria-pressed', String(!!on)); r.title = on ? 'Detener tomas [Espacio]' : 'Reproducir tomas [Espacio]'; r.setAttribute('aria-label', on ? 'Detener tomas' : 'Reproducir tomas');
-  r.innerHTML = `<i data-lucide="${on ? 'square' : 'play'}"></i>`; icons();
+  r.setAttribute('aria-pressed', String(!!on)); r.dataset.tip = on ? 'Detener · Espacio' : 'Cinemática · Espacio'; r.setAttribute('aria-label', on ? 'Detener cinemática' : 'Reproducir cinemática');
+  r.innerHTML = `<i data-lucide="${on ? 'square' : 'clapperboard'}"></i>`; icons();
 }
 $('#railPlay')?.addEventListener('click', togglePres);
 export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? 'Pausar carrusel' : 'Reanudar carrusel'); icons(); }
@@ -64,13 +51,13 @@ $('#scrDel').onclick = () => {
   const [it] = items.splice(sel, 1); it.tex.dispose(); if (it.isVideo) it.src.pause();
   clearCar(); setNextIdx(-1); screenMat.uniforms.uProgress.value = 0;
   setCur(Math.min(cur, items.length - 1)); setSel(Math.min(sel, items.length - 1));
-  renderStrip(); refreshEdit(); scheduleCar();
+  renderStrip(); refreshEdit(); scheduleCar(); syncScreens();
 };
 function move(dir){
   const j = sel + dir; if (j < 0 || j >= items.length || nextIdx >= 0) return;
   [items[sel], items[j]] = [items[j], items[sel]];
   if (cur === sel) setCur(j); else if (cur === j) setCur(sel);
-  setSel(j); renderStrip();
+  setSel(j); renderStrip(); syncScreens();
 }
 $('#scrLeft').onclick = () => move(-1); $('#scrRight').onclick = () => move(1);
 

@@ -17,6 +17,15 @@ const PROBE_MIN = 10000, PROBE_MAX = 60000; // sondeo para subir un paso si la e
 
 export const fullPr = () => Math.min(devicePixelRatio || 1, P.quality.mode === 'max' ? 3 : 2);
 
+// Último FPS medio visto EN MOVIMIENTO (Infinity = aún sin medir). Lo usa la acumulación del preview (ver accumAllowed).
+let lastFps = Infinity;
+// ¿Puede el preview refinarse por acumulación cuando la escena está quieta? High/Max: siempre. Auto: solo si el FPS medio
+// sostiene ≥ BAD_FPS y el pixel ratio ya está al máximo (si no, primero se restaura resolución y luego se refina).
+export function accumAllowed(){
+  if (P.quality.mode !== 'auto') return true;
+  return lastFps >= BAD_FPS && pr >= fullPr() - 1e-3;
+}
+
 let winStart = 0, frames = 0, lastT = 0, lastMove = 0, cooldownUntil = 0, probeAt = 0, probeGap = PROBE_MIN, probing = false;
 const resetWindow = now => { winStart = now; frames = 0; lastT = now; };
 
@@ -43,7 +52,7 @@ export function qualityTick(now, moving){
   if (!lastT || now - lastT > 500) resetWindow(now); // hueco largo (pestaña oculta, resize, setSize): ventana inválida
   lastT = now; frames++;
   if (now - winStart < WINDOW) return;
-  const fps = frames * 1000 / (now - winStart); resetWindow(now);
+  const fps = frames * 1000 / (now - winStart); lastFps = fps; resetWindow(now);
   if (fps < BAD_FPS && now >= cooldownUntil && pr > FLOOR + 1e-3) {
     setLevel(Math.max(FLOOR, pr - STEP), now); cooldownUntil = now + COOLDOWN;
     if (probing) probeGap = Math.min(PROBE_MAX, probeGap * 2); // el sondeo falló → espera más antes de reintentar

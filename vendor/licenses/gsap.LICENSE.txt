@@ -1,0 +1,1 @@
+GSAP 3.12.5 (c) 2024 GreenSock. Licencia estandar "no charge": https://gsap.com/standard-license

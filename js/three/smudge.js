@@ -10,7 +10,7 @@ import { SMUDGE_MAP } from '../data/smudge-map.js';
 
 /* ── Imperfecciones del vidrio (huellas / grasa) ──
    Mapa en escala de grises preprocesado desde la imagen de referencia: fondo → 0, huellas → 1 (niveles +
-   gamma 0.85). Embebido como data URI (el CSP del artifact no permite cargar imágenes externas).
+   gamma 0.85). JPEG externo en assets/smudge-map.jpg (ruta relativa: respeta el basePath).
    Three multiplica roughnessMap × roughness, y así una superficie limpia quedaría en 0. Por eso parcheamos
    el shader para que sea ADITIVO: rugosidad = base + intensidad × huella (y lo mismo para metalness y para la
    capa clearcoat). Resultado: vidrio espejado limpio, y el reflejo se difumina solo donde hay grasa. */

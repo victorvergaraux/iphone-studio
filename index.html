@@ -1,18 +1,30 @@
 <title>Mockup Studio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<meta name="theme-color" content="#ebeae6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="preload" href="vendor/fonts/bricolage-grotesque-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/export.css">
+<link rel="stylesheet" href="css/shoteditor.css">
 
 <canvas id="c" aria-label="Escena 3D del mockup. Arrastra para orbitar, rueda para acercar."></canvas>
-<div class="guide" id="guide" hidden><div class="grid3" aria-hidden="true"><i class="v" style="left:33.333%"></i><i class="v" style="left:66.666%"></i><i class="h" style="top:33.333%"></i><i class="h" style="top:66.666%"></i></div><span id="guideLbl">9:16</span></div>
+<div class="guide" id="guide" hidden><span id="guideLbl">9:16</span></div>
+<div class="grid3" id="grid3" aria-hidden="true" hidden><i class="v a"></i><i class="v b"></i><i class="h a"></i><i class="h b"></i></div>
 <div class="drop" id="drop">Suelta imágenes o video</div>
 <div class="rec" id="rec" hidden><i></i><span id="recTime">00:00 / 00:15</span><button id="recStop">Detener</button></div>
 
 <div class="prog" id="prog" aria-hidden="true"></div>
+<aside class="shotbar ui" id="shotbar" aria-hidden="true">
+  <span class="sb-n" id="sbN">01</span>
+  <span class="sb-t">Cinemática</span><span class="sb-name" id="sbName"></span>
+  <div class="sb-track" id="sbTrack"></div>
+  <span class="sb-time" id="sbTime">00:00 / 00:00</span>
+</aside>
 
 <aside class="side ui" id="side">
   <div id="pane"></div>
@@ -37,11 +49,12 @@
   </section>
 </div>
 <nav class="rail ui" id="rail" aria-label="Herramientas">
-  <button class="btn icon" id="onbHelp" title="Introducción" aria-label="Abrir introducción" aria-expanded="false"><i data-lucide="circle-help"></i></button>
-  <button class="btn icon" id="railExport" title="Exportar" aria-label="Exportar" aria-expanded="false"><i data-lucide="download"></i></button>
-  <button class="btn icon" id="railDock" title="Mostrar u ocultar pantallas [D]" aria-label="Mostrar u ocultar pantallas" aria-pressed="true"><i data-lucide="panel-bottom"></i></button>
-  <button class="btn icon" id="railPanel" title="Mostrar u ocultar controles avanzados" aria-label="Mostrar u ocultar controles avanzados" aria-pressed="false"><i data-lucide="sliders-horizontal"></i></button>
-  <button class="btn icon" id="railPlay" title="Reproducir tomas [Espacio]" aria-label="Reproducir tomas" aria-pressed="false"><i data-lucide="play"></i></button>
+  <button class="btn icon" id="onbHelp" data-tip="Instrucciones" aria-label="Abrir introducción" aria-expanded="false"><i data-lucide="circle-help"></i></button>
+  <button class="btn icon" id="railExport" data-tip="Exportar" aria-label="Exportar" aria-expanded="false"><i data-lucide="download"></i></button>
+  <button class="btn icon" id="railDock" data-tip="Pantallas · D" aria-label="Mostrar u ocultar pantallas" aria-pressed="true"><i data-lucide="panel-bottom"></i></button>
+  <button class="btn icon" id="railPanel" data-tip="Controles" aria-label="Mostrar u ocultar controles avanzados" aria-pressed="false"><i data-lucide="sliders-horizontal"></i></button>
+  <button class="btn icon" id="railShots" data-tip="Tomas" aria-label="Editor de cinemática" aria-expanded="false" aria-controls="shotEditor"><i data-lucide="list-video"></i></button>
+  <button class="btn icon" id="railPlay" data-tip="Cinemática · Espacio" aria-label="Reproducir cinemática" aria-pressed="false"><i data-lucide="clapperboard"></i></button>
 </nav>
 <aside class="onb ui" id="onb" role="dialog" aria-label="Introducción" hidden>
   <div class="onb-bars" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -49,13 +62,14 @@
   <div class="onb-body" id="onbBody">
     <div class="onb-num" id="onbNum">01</div>
     <h2 id="onbTitle"></h2>
+    <span class="onb-sub" id="onbSub" hidden></span>
     <p id="onbText"></p>
     <div class="onb-acts" id="onbActs"></div>
   </div>
   <footer class="onb-nav"><button class="btn" id="onbBack">Atrás</button><button class="btn solid" id="onbNext">Siguiente</button></footer>
 </aside>
 <aside class="exp ui" id="expCard" role="dialog" aria-label="Exportar" hidden>
-  <header class="exp-head"><h2>Exportar</h2><button class="exp-link" id="expClose">Cerrar</button></header>
+  <header class="exp-head"><h2>Exportar</h2><button class="se-ico" id="expClose" data-tip="Cerrar · Esc" aria-label="Cerrar"><i data-lucide="x"></i></button></header>
   <div class="exp-out"><span class="exp-lbl">Salida · píxeles</span><div class="exp-size" id="expSize" aria-live="polite"></div></div>
   <div class="exp-main" id="expMain"></div>
   <button class="btn solid exp-go" id="expGo"></button>
@@ -66,18 +80,24 @@
     </div>
   </div>
 </aside>
+<aside class="se ui" id="shotEditor" role="dialog" aria-label="Cinemática" hidden>
+  <header class="se-head"><div class="se-count" id="seCount" aria-live="polite">00</div><h2>Cinemática</h2><button class="se-ico" id="seClose" data-tip="Cerrar · Esc" aria-label="Cerrar"><i data-lucide="x"></i></button></header>
+  <div class="se-list" id="seList" role="list" aria-label="Tomas"></div>
+  <div class="se-detail" id="seDetail"></div>
+  <div class="se-acts" id="seActs"></div>
+</aside>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.js"></script>
+<script src="vendor/gsap/gsap.min.js"></script>
+<script src="vendor/lucide/lucide.min.js"></script>
+<script src="vendor/mp4-muxer/mp4-muxer.js"></script>
+<script src="vendor/webm-muxer/webm-muxer.js"></script>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/",
-  "tweakpane": "https://cdn.jsdelivr.net/npm/tweakpane@4.0.4/dist/tweakpane.min.js",
-  "@tweakpane/plugin-essentials": "https://cdn.jsdelivr.net/npm/@tweakpane/plugin-essentials@0.2.1/dist/tweakpane-plugin-essentials.min.js"
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/",
+  "tweakpane": "./vendor/tweakpane/tweakpane.min.js",
+  "@tweakpane/plugin-essentials": "./vendor/tweakpane/tweakpane-plugin-essentials.min.js"
 }}
 </script>
 <script type="module" src="js/main.js"></script>

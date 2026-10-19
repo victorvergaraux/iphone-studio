@@ -9,31 +9,84 @@ import { anchor, mFrame, makeButtons } from '../three/iphone.js';
 import { applyTransitionMode, island, mGlass, screenMat } from '../three/screen.js';
 import { applySmudgeScale, prop, rebuildShape, setPose, smudgeU } from '../three/smudge.js';
 import { resetCarousel, scheduleCar } from '../screens/carousel.js';
-import { curShot, flyTo, playPresentation, presentationLength, setCurShot, setShots, shots, stopPresentation } from '../three/camera.js';
+import { sanitizeShot, curShot, flyTo, playPresentation, presentationLength, setCurShot, setShots, shots, stopPresentation } from '../three/camera.js';
 import { beginExport, endExport, exportSize, fitCanvasCss, layout, recording, setRecording } from '../three/format.js';
 import { offline } from '../three/loop.js';
 import { pane } from '../ui/pane.js';
 import { renderShots, syncReplace } from '../ui/strips.js';
-import { offer } from './export.js';
+import { items } from '../screens/carousel.js';
+import { loadBlobs } from '../screens/load.js';
+import { pickEdit } from '../screens/store.js';
+import { offer, snapshot } from './export.js';
+import { hideNotice, showNotice } from '../core/notice.js';
+import { reset as resetHistory } from '../core/history.js';
 import { cancelOffline, setCancelOffline } from './offline.js';
 
-/* ── Proyecto JSON: ajustes + tomas. Al importar se aplican en vivo (las imágenes cargadas se conservan). ── */
-export function exportProject(){
-  const data = { app:'mockup-studio', version:2, P, shots: shots.map(({ p, t, fov, name }) => ({ p, t, fov, name })) };
+/* ── Proyecto JSON. Formato:
+   v2: { app, version:2, P, shots }                       (sin medios: al importar se conservan las pantallas actuales)
+   v3: { app, version:3, P, shots, media:[{ name, type, data, edit }] }
+       · media = pantallas PROPIAS en orden (las de ejemplo no se incluyen); data = data URL del archivo ORIGINAL (sin recodificar)
+       · edit = { fit, zoom, offX, offY, scroll, autoScroll }
+       · videos solo si pesan ≤ 25 MB (el resto se omite y se avisa con toast)
+   Al importar se aplican los ajustes en vivo; si v3 trae media, REEMPLAZA las pantallas actuales. ── */
+const PROJECT_VERSION = 3;
+// Tope de video del proyecto. Es un objeto exportado para que los tests lo bajen sin generar 25 MB reales.
+export const limits = { maxVideo: 25 * 1024 * 1024 };
+const toDataURL = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+export async function exportProject(){
+  const media = []; let skipped = 0;
+  for (const it of items) {
+    if (it.example || !it.blob) continue;
+    if (it.isVideo && it.blob.size > limits.maxVideo) { skipped++; continue; }
+    try { media.push({ name:it.name, type:it.blob.type, data:await toDataURL(it.blob), edit:pickEdit(it) }); } catch { skipped++; }
+  }
+  const data = { app:'mockup-studio', version:3, P, shots: shots.map(({ p, t, fov, name, move, hold, ease }) => ({ p, t, fov, name, move, hold, ease })), media };
   offer(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }), `mockup-proyecto-${new Date().toISOString().slice(0, 10)}.json`);
+  if (skipped) toast(`${skipped} video(s) omitido(s) del proyecto (más de 25 MB)`);
+}
+/* Valida la ESTRUCTURA del proyecto antes de tocar nada. Devuelve un mensaje de error o null si es aplicable. */
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+export function validateProject(data){
+  if (!isObj(data)) return 'el archivo no es un proyecto de Mockup Studio';
+  if (data.app !== undefined && data.app !== 'mockup-studio') return 'el archivo no pertenece a Mockup Studio';
+  if (!Number.isInteger(data.version) || data.version < 1) return 'no trae versión o es desconocida';
+  if (data.version > PROJECT_VERSION) return `es de una versión más nueva (v${data.version}): actualiza la app`;
+  if (!isObj(data.P) || !Object.values(data.P).every(isObj)) return 'los ajustes están dañados';
+  if (data.shots !== undefined && !Array.isArray(data.shots)) return 'las tomas están dañadas';
+  if (data.media !== undefined && !Array.isArray(data.media)) return 'las pantallas están dañadas';
+  return null;
 }
 $('#projFile').onchange = async e => {
   const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const fail = msg => toast(`No se pudo importar: ${msg}. No se cambió nada`, 4500);
+  let data;
+  try { data = JSON.parse(await f.text()); } catch { return fail('el archivo no es un JSON válido'); }
+  const bad = validateProject(data); if (bad) return fail(bad);
+  // 1) Preparar todo SIN tocar el estado: pantallas decodificadas y tomas saneadas
+  const blobs = [], states = []; let badMedia = 0;
+  for (const m of data.media || []) {
+    if (typeof m?.data !== 'string' || typeof m.type !== 'string' || !/^(image|video)\//.test(m.type)) { badMedia++; continue; }
+    try { const b = await (await fetch(m.data)).blob(); blobs.push(new File([b], m.name || 'pantalla', { type:m.type })); states.push(isObj(m.edit) ? m.edit : null); } catch { badMedia++; }
+  }
+  const newShots = Array.isArray(data.shots) ? data.shots.map(sanitizeShot).filter(Boolean) : [];
+  // 2) Copia del estado para revertir si applyAll lanza a mitad de camino
+  const snapP = structuredClone(P), snapShots = shots.slice();
   try {
-    const data = JSON.parse(await f.text());
-    if (!data?.P) throw new Error('sin ajustes');
     for (const g in P) for (const k in P[g]) { const v = data.P[g]?.[k]; if (v !== undefined && typeof v === typeof P[g][k]) P[g][k] = v; }
-    if (Array.isArray(data.shots) && data.shots.length) setShots(data.shots.filter(s => Array.isArray(s.p) && Array.isArray(s.t) && typeof s.fov === 'number'));
-    await applyAll(); toast(`Proyecto ${f.name} importado`);
-  } catch (err) { toast(`No se pudo importar: ${err.message}`); }
+    if (newShots.length) setShots(newShots);
+    await applyAll();
+  } catch (err) {
+    for (const g in snapP) Object.assign(P[g], snapP[g]); setShots(snapShots);
+    try { await applyAll(); } catch {}
+    return fail(err?.message || 'error al aplicar los ajustes');
+  }
+  // 3) Las pantallas van al final: reemplazan las actuales solo si al menos una cargó bien (loadBlobs lo garantiza)
+  if (blobs.length) await loadBlobs(blobs, states, { replace:true, silent:true });
+  resetHistory();
+  toast(`Proyecto ${f.name} importado${badMedia ? ` (${badMedia} pantalla(s) inválida(s) omitida(s))` : ''}`, badMedia ? 4000 : 2200);
 };
 // Re-aplica TODO el estado de P a la escena (lo que normalmente hacen los handlers del panel)
-async function applyAll(){
+export async function applyAll({ cam = true } = {}){
   bgColor.set(P.scene.bg); mFloor.color.set(P.scene.floor); mBlocks.color.set(P.scene.blocks); mAccent.color.set(P.scene.accent);
   blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; applyObjPos(); applySurfaceTex(); applyFloorMode(); syncReplace();
   renderer.toneMappingExposure = P.env.exposure;
@@ -53,22 +106,30 @@ async function applyAll(){
   catcher.material.opacity = P.exp.shadowOpacity;
   await loadEnv(P.env.preset); applyEnvIntensity(); applyBackground(); placeKey();
   pane.refresh(); layout(); scheduleCar();
-  setCurShot(-1); renderShots(); if (shots.length) flyTo(0);
+  if (cam) { setCurShot(-1); renderShots(); if (shots.length) flyTo(0); } // cam:false = restaurar ajustes (deshacer) sin mover la cámara
 }
 
 function pickMime(){
   return ['video/mp4;codecs=avc1.640028', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(m => window.MediaRecorder?.isTypeSupported?.(m));
 }
 let recorder = null, recTimer = null;
+/* ¿Se puede grabar en tiempo real? Devuelve el mime elegido o null (sin MediaRecorder, sin captureStream o sin formato de video soportado). */
+export const realtimeMime = () => (window.MediaRecorder && canvas.captureStream && pickMime()) || null;
+/* Sin forma de grabar video: en vez de un toast críptico, aviso claro con la alternativa (PNG). Se oculta solo a los 12 s. */
+export function noRecordingNotice(why){
+  showNotice(`${why}. Puedes exportar la imagen en PNG.`, { label:'Exportar PNG', onClick:() => { hideNotice(); snapshot(); } }, 12000);
+}
 export function startRecordingRealtime(){
   if (recording) return;
-  const mime = pickMime(); if (!mime || !canvas.captureStream) return toast('Este navegador no permite grabar el canvas');
+  const mime = realtimeMime();
+  if (!mime) return noRecordingNotice(window.MediaRecorder ? 'Este navegador no puede grabar el lienzo en ningún formato de video' : 'Este navegador no tiene MediaRecorder (grabación de video)');
   const usePres = P.exp.playShots && shots.length > 0;
   const len = P.exp.length || (usePres ? presentationLength() : 15);
   const [w, h] = exportSize();
-  setRecording(true); document.body.classList.add('recording'); beginExport(w, h, 1); fitCanvasCss(w, h);
   const stream = canvas.captureStream(P.exp.fps), chunks = [];
-  recorder = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:P.exp.mbps * 1e6 });
+  try { recorder = new MediaRecorder(stream, { mimeType:mime, videoBitsPerSecond:P.exp.mbps * 1e6 }); }
+  catch (err) { stream.getTracks().forEach(t => t.stop()); return noRecordingNotice(`El navegador rechazó la grabación (${err?.name || 'error'})`); }
+  setRecording(true); document.body.classList.add('recording'); beginExport(w, h, 1); fitCanvasCss(w, h);
   recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
   recorder.onstop = () => {
     setRecording(false); clearInterval(recTimer); $('#rec').hidden = true; $('#prog').classList.remove('on'); stopPresentation(); document.body.classList.remove('recording'); canvas.style.cssText = ''; endExport();

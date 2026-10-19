@@ -15,13 +15,18 @@ export let cur = 0, sel = 0, nextIdx = -1, carPlaying = P.car.autoplay, carTimer
 function makeTex(src){
   const t = src instanceof HTMLVideoElement ? new THREE.VideoTexture(src) : new THREE.Texture(src);
   t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = aniso; t.needsUpdate = true;
+  // VideoTexture nace SIN mipmaps (minFilter Linear): un video de 1080p/4K en una pantalla pequeña e inclinada se muestrea saltando
+  // píxeles (alias, centelleo, detalle perdido) y la anisotropía no hace nada. Con mipmaps se filtra igual que las imágenes.
+  if (src instanceof HTMLVideoElement) { t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; }
   return t;
 }
 export function addItem(src, name, opts = {}){
   const w = src.videoWidth || src.width, h = src.videoHeight || src.height, ia = w / h;
   const tall = ia < S_ASPECT * 0.82; // screenshot largo → ajuste a ancho con scroll
   const it = { name, src, tex: makeTex(src), aspect: ia, isVideo: src instanceof HTMLVideoElement,
-    fit: tall ? 'width' : 'cover', zoom: 1, offX: 0, offY: 0, scroll: tall ? 0 : 0.5, autoScroll: tall, thumb: opts.thumb || null, example: !!opts.example };
+    fit: tall ? 'width' : 'cover', zoom: 1, offX: 0, offY: 0, scroll: tall ? 0 : 0.5, autoScroll: tall, thumb: opts.thumb || null, example: !!opts.example,
+    // id/blob/stored: persistencia en IndexedDB (screens/store.js). blob = archivo original; stored = ya escrito en la base
+    id: opts.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)), blob: opts.blob || null, stored: !!opts.stored };
   items.push(it); return it;
 }
 // Fracción visible + centro de muestreo según encuadre (equivalente a object-fit + object-position)
@@ -54,7 +59,7 @@ export function scheduleCar(){
 export function resetCarousel(){
   clearCar(); nextIdx = -1; cur = 0; sel = 0;
   screenMat.uniforms.uProgress.value = 0;
-  items.forEach(it => { if (it.autoScroll && canScroll(it)) it.scroll = 0; if (it.isVideo) { try { it.src.currentTime = 0; } catch {} } });
+  items.forEach(it => { if (it.autoScroll && canScroll(it)) it.scroll = 0; if (it.isVideo) { try { it.src.currentTime = 0; } catch {} } it.t0 = gsap.globalTimeline.time(); }); // t0: lo usa el export offline para sincronizar videos
   hooks.renderStrip(); hooks.refreshEdit(); scheduleCar();
 }
 export function goTo(i){
@@ -66,6 +71,7 @@ export function goTo(i){
   nextIdx = i;
   const it = items[i]; if (it.autoScroll && canScroll(it)) it.scroll = 0;
   if (it.isVideo) it.src.currentTime = 0;
+  it.t0 = gsap.globalTimeline.time(); // instante de activación (reloj GSAP): el export offline sincroniza los videos con él
   screenMat.uniforms.uProgress.value = 0;
   applyTransitionMode();
   const fade = P.car.mode === 'fade';

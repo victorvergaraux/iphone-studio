@@ -1,6 +1,7 @@
 import './core/utils.js';
 import './core/params.js';
 import './core/persist.js';
+import './core/pwa.js';
 import './three/renderer.js';
 import './three/scene.js';
 import './three/hdri.js';
@@ -13,9 +14,12 @@ import './screens/examples.js';
 import './three/camera.js';
 import './three/format.js';
 import './three/loop.js';
+import './three/glcontext.js'; // pérdida/restauración del contexto WebGL
 import './ui/pane.js';
 import './ui/quality.js';
 import './ui/strips.js';
+import './ui/shotbar.js';
+import './ui/touch.js';
 import './ui/dockToggle.js';
 import './ui/onboarding.js';
 import './ui/exportcard.js';
@@ -30,26 +34,40 @@ import { camera, controls } from './three/renderer.js';
 import { blocksG, ground } from './three/scene.js';
 import { loadEnv } from './three/hdri.js';
 import { island } from './three/screen.js';
-import { addItem, scheduleCar } from './screens/carousel.js';
+import { addItem, items, scheduleCar } from './screens/carousel.js';
+import { loadBlobs } from './screens/load.js';
+import { loadStored } from './screens/store.js';
 import { DF, MF } from './screens/examples.js';
-import { curShot, defaultShots, setCurShot, setShots, shots } from './three/camera.js';
+import { sanitizeShot, curShot, defaultShots, setCurShot, setShots, shots } from './three/camera.js';
 import { layout, setQuality } from './three/format.js';
 import { tick } from './three/loop.js';
 import { refreshEdit } from './ui/pane.js';
 import { renderShots, renderStrip, setCarBtn } from './ui/strips.js';
 import { EXAMPLES } from './data/examples-data.js';
 import { showFirstTime } from './ui/onboarding.js';
+import './ui/shoteditor.js'; // editor de cinemática (card)
+import './core/history.js'; // deshacer / rehacer (tomas + ajustes)
 
 /* ───────────────────────── Arranque ───────────────────────── */
 (async () => {
   try { await Promise.all([document.fonts.load(`800 72px ${DF}`), document.fonts.load(`400 22px ${MF}`), document.fonts.load(`600 30px ${DF}`)]); } catch {}
   // Pantallas de ejemplo: 5 afiches "Bauhaus · Generative Grid" a su tamaño original de pantalla (1320×2868 → 880 px, sin recorte)
-  for (const [src, n] of EXAMPLES) {
-    const img = new Image(); img.src = src;
-    try { await img.decode(); addItem(img, n, { thumb:src, example:true }); } catch {}
+  // Si hay pantallas propias guardadas (IndexedDB) se restauran EN LUGAR de los ejemplos; si no (o falla), ejemplos como siempre
+  const stored = await loadStored();
+  if (stored.length) await loadBlobs(stored.map(s => s.blob), stored, { replace:false, silent:true });
+  // Ejemplos: descarga + decodificación EN PARALELO (todas las peticiones salen a la vez); se agregan en orden estricto.
+  // Solo se espera la primera (arranque rápido); el resto se agrega en segundo plano en cuanto está lista, sin reordenar.
+  if (!items.length) {
+    const loads = EXAMPLES.map(([src, n]) => { const img = new Image(); img.src = src; return img.decode().then(() => [img, n, src], () => null); });
+    const add = r => { if (r) addItem(r[0], r[1], { thumb:r[2], example:true }); };
+    if (loads.length) add(await loads[0]);
+    (async () => {
+      for (const l of loads.slice(1)) add(await l); // orden = orden del manifiesto aunque lleguen desordenadas
+      if (loads.length > 1) { renderStrip(); refreshEdit(); }
+    })();
   }
   // tomas guardadas solo si alguna es tuya; si todas eran de ejemplo, se regeneran con el preset
-  if (Array.isArray(saved?.shots) && saved.shots.length && !saved.shots.every(s => s.example)) setShots(saved.shots.filter(s => Array.isArray(s.p) && Array.isArray(s.t) && typeof s.fov === 'number'));
+  if (Array.isArray(saved?.shots) && saved.shots.length && !saved.shots.every(s => s.example)) setShots(saved.shots.map(sanitizeShot).filter(Boolean));
   if (!shots.length) defaultShots();
   blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; island.visible = P.phone.island;
   camera.fov = shots[0].fov; camera.updateProjectionMatrix();

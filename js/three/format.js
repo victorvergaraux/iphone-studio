@@ -2,6 +2,7 @@ import { $, DUR, EASE, reduced } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { aoScale, camera, canvas, composer, gradePass, gtao, renderer, setAoScale } from './renderer.js';
 import { sun } from './scene.js';
+import { accum } from './accum.js';
 
 /* ───────────────────────── Tamaño / formato ───────────────────────── */
 export const FORMATS = { 'Pantalla':0, '16:9':16/9, '4:5':4/5, '1:1':1, '9:16':9/16, '3:2':3/2 };
@@ -36,6 +37,7 @@ export function exportSize(){
   return [Math.round(w / 2) * 2, Math.round(h / 2) * 2];
 }
 export function setRenderSize(w, h, ratio){
+  accum.reset(); // el tamaño cambia → el promedio acumulado deja de ser válido
   renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
   // composer.setPixelRatio ya redimensiona internamente (con el tamaño viejo): si el ancho/alto no cambian, ese único paso basta
   // y evitamos realocar dos veces todos los targets (MSAA, GTAO, denoise). No se cachea el último tamaño: beginExport también
@@ -54,6 +56,7 @@ export function applyView(){
 // Exportar = render del sub-rectángulo de la guía (lo que ves dentro de la guía es lo que sale)
 // Calidad: preview ligero (AO 50 %, sombra 2K) / export alto (AO 100 %, sombra 4K, más muestras)
 export function setQuality(high){
+  accum.reset(); // AO/sombra cambian → reinicia la acumulación progresiva
   high = high || P.quality.mode === 'max'; // Max: el preview también usa AO 24 y sombra 4K (el export siempre pasa true)
   setAoScale(1);
   gtao.updateGtaoMaterial({ samples: high ? 24 : 12 });
@@ -61,7 +64,7 @@ export function setQuality(high){
   if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; }
 }
 export function beginExport(w, h, ratio){
-  exporting = true; setQuality(true);
+  exporting = true; setQuality(true); accum.reset(); // el export parte sin acumulación previa
   renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
   composer.setPixelRatio(ratio); composer.setSize(w, h);
   gradePass.uniforms.uRes.value.set(w * ratio, h * ratio);
@@ -70,7 +73,7 @@ export function beginExport(w, h, ratio){
   else camera.clearViewOffset();
   camera.updateProjectionMatrix();
 }
-export function endExport(){ exporting = false; setQuality(false); lastSx = null; layout(); }
+export function endExport(){ exporting = false; setQuality(false); accum.reset(); lastSx = null; layout(); } // reset: el pase de acumulación queda apagado
 export function fitCanvasCss(w, h){
   const W = innerWidth, H = innerHeight, m = guide ? 24 : 0;
   let cw = W - 2 * m, ch = cw * h / w; if (ch > H - 2 * m) { ch = H - 2 * m; cw = ch * w / h; }
@@ -86,6 +89,12 @@ export function layout(){
   gridRect = guide || { x:0, y:0, w:innerWidth, h:innerHeight };
   g.hidden = false; g.classList.toggle('full', !guide);
   Object.assign(g.style, { left:`${gridRect.x}px`, top:`${gridRect.y}px`, width:`${gridRect.w}px`, height:`${gridRect.h}px` });
+  // Retícula: hermana del guide (necesario para mix-blend-mode, ver CSS). Todo en píxeles ENTEROS: una línea de 1 px en posición
+  // fraccionaria se reparte entre 2 píxeles y se ve gruesa y borrosa.
+  const gr = $('#grid3'), gx = Math.round(gridRect.x), gy = Math.round(gridRect.y), gw = Math.round(gridRect.w), gh = Math.round(gridRect.h);
+  gr.hidden = false; Object.assign(gr.style, { left:`${gx}px`, top:`${gy}px`, width:`${gw}px`, height:`${gh}px` });
+  gr.style.setProperty('--x1', `${Math.round(gw / 3)}px`); gr.style.setProperty('--x2', `${Math.round(gw * 2 / 3)}px`);
+  gr.style.setProperty('--y1', `${Math.round(gh / 3)}px`); gr.style.setProperty('--y2', `${Math.round(gh * 2 / 3)}px`);
   if (guide) $('#guideLbl').textContent = P.exp.format;
   const t = targetShift();
   if (Math.abs(t.x - viewShift.x) > 0.5 || Math.abs(t.y - viewShift.y) > 0.5) gsap.to(viewShift, { x:t.x, y:t.y, duration:reduced ? 0 : DUR, ease:EASE, overwrite:true });

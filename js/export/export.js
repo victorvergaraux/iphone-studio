@@ -5,7 +5,8 @@ import { blocksG, catcher, ground } from '../three/scene.js';
 import { anchor } from '../three/iphone.js';
 import { prop } from '../three/smudge.js';
 import { maxTex } from '../screens/carousel.js';
-import { beginExport, endExport, exportSize } from '../three/format.js';
+import { beginExport, endExport, exportSize, fitCanvasCss } from '../three/format.js';
+import { accum } from '../three/accum.js';
 
 /* ───────────────────────── Exportación ───────────────────────── */
 let downloads = null;
@@ -16,11 +17,12 @@ function randomCode(n = 5){
   const r = crypto.getRandomValues(new Uint32Array(n));
   return Array.from(r, v => CODE_CHARS[v % CODE_CHARS.length]).join('');
 }
+/* Devuelve cómo terminó: 'saved' (descarga directa, ya avisa «Archivo guardado»), 'declined' o 'modal' (vista previa con guardado manual). */
 export async function offer(blob, filename){
   filename = filename.replace(/(\.[a-z0-9]+)$/i, `-${randomCode()}$1`); // mockup-...-1920.png → mockup-...-1920-K7Q2M.png
   if (downloads) {
-    try { await downloads.save({ filename, data:blob }); toast('Archivo guardado'); return; }
-    catch (err) { if (err?.code === 'declined') return toast('Descarga cancelada'); }
+    try { await downloads.save({ filename, data:blob }); toast('Archivo guardado'); return 'saved'; }
+    catch (err) { if (err?.code === 'declined') { toast('Descarga cancelada'); return 'declined'; } }
   }
   // Fallback: vista previa con guardado manual (el sandbox bloquea descargas directas)
   const url = URL.createObjectURL(blob), m = document.createElement('div'); m.className = 'modal';
@@ -31,25 +33,57 @@ export async function offer(blob, filename){
   m.innerHTML = `<div class="card"><div class="rowhead"><span class="label"><b>${filename}</b> · ${(blob.size / 1048576).toFixed(2)} MB</span><button class="btn icon" aria-label="Cerrar"><i data-lucide="x"></i></button></div>
     ${body}<p>${how}</p></div>`;
   m.querySelector('button').onclick = () => { m.remove(); URL.revokeObjectURL(url); };
-  document.body.append(m); icons();
+  document.body.append(m); icons(); return 'modal';
 }
 /* PNG transparente: sin fondo, piso ni bloques; solo el celular + la sombra en un shadow catcher a la altura
-   donde se apoya. AO y grano apagados (sobre alfa parcial ensuciarían la sombra). */
-function withTransparent(fn){
+   donde se apoya. AO y grano apagados (sobre alfa parcial ensuciarían la sombra). Asíncrono: envuelve el bucle de muestras. */
+async function withTransparent(fn){
   const st = { bg:scene.background, fog:scene.fog, blocks:blocksG.visible, ground:ground.visible, prop:prop.visible, ao:gtao.enabled, grain:gradePass.uniforms.uGrain.value };
   scene.background = null; scene.fog = null; blocksG.visible = ground.visible = prop.visible = false; gtao.enabled = false;
   catcher.position.y = anchor.position.y + 0.0005; catcher.visible = true;
   gradePass.uniforms.uAlpha.value = 1; gradePass.uniforms.uGrain.value = 0;
-  try { fn(); } finally {
+  try { return await fn(); } finally {
     scene.background = st.bg; scene.fog = st.fog; blocksG.visible = st.blocks; ground.visible = st.ground; prop.visible = st.prop; gtao.enabled = st.ao;
     catcher.visible = false; gradePass.uniforms.uAlpha.value = 0; gradePass.uniforms.uGrain.value = st.grain;
   }
 }
-export function snapshot(){
-  const [w, h] = exportSize(), k = P.exp.pngScale > 1 && Math.max(w, h) * 2 <= maxTex ? 2 : 1;
+/* Número de muestras del refinamiento progresivo del PNG, derivado del modo Quality y del tamaño de render:
+   auto 8 · high 12 · max 16; por encima de ~12 Mpx (4K+) se reduce a la mitad para que el tiempo no se dispare. */
+export function snapshotSamples(w, h){
+  const base = { auto:8, high:12, max:16 }[P.quality.mode] ?? 8;
+  return w * h > 12e6 ? Math.max(4, base / 2) : base;
+}
+// Cede el control al navegador para que pinte el toast de progreso (rAF se estrangula en pestañas ocultas → respaldo con timeout)
+const pause = () => new Promise(r => { const t = setTimeout(r, 40); requestAnimationFrame(() => { clearTimeout(t); r(); }); });
+/* PNG con refinamiento progresivo: N cuadros con jitter sub-píxel promediados (ver js/three/accum.js). El grano se aplica
+   una vez sobre el promedio. opts.samples fuerza N (1 = un solo cuadro, el comportamiento clásico). Devuelve el Blob. */
+export async function snapshot(opts = {}){
+  if (accum.busy) return null; // ya hay un PNG en curso
+  const [w, h] = exportSize();
+  // 2× no cabe en la textura máxima de la GPU → se baja pngScale a 1× (y se guarda) con aviso, en vez de fallar o ignorarlo en silencio
+  if (P.exp.pngScale > 1 && Math.max(w, h) * 2 > maxTex) { P.exp.pngScale = 1; toast(`La GPU no admite PNG 2× a este tamaño (máx. ${maxTex}px): uso 1×`, 4000); }
+  const k = P.exp.pngScale > 1 ? 2 : 1;
+  const n = Math.max(1, Math.round(opts.samples ?? snapshotSamples(w * k, h * k)));
   const name = `mockup-${P.exp.format.replace(':', 'x')}-${w * k}${P.exp.transparent ? '-alpha' : ''}.png`;
-  beginExport(w, h, k);
-  const shoot = () => { composer.render(); canvas.toBlob(b => b ? offer(b, name) : toast('No se pudo capturar'), 'image/png'); }; // toBlob copia el bitmap al llamarse
-  P.exp.transparent ? withTransparent(shoot) : shoot();
-  endExport();
+  accum.busy = true; // el loop de rAF no dibuja mientras haya awaits
+  let pBlob;
+  try {
+    beginExport(w, h, k); fitCanvasCss(w, h); // el canvas queda encuadrado mientras se refina
+    const shoot = async () => {
+      for (let i = 0; i < n; i++) {
+        if (n > 1) { toast(`Refinando ${i + 1}/${n}…`); await pause(); }
+        n > 1 ? accum.sample() : composer.render();
+      }
+      pBlob = new Promise(r => { try { canvas.toBlob(r, 'image/png'); } catch { r(null); } }); // toBlob copia el bitmap al llamarse: debe ir justo tras el último render
+    };
+    P.exp.transparent ? await withTransparent(shoot) : await shoot();
+  } finally {
+    accum.reset(); canvas.style.cssText = ''; endExport(); accum.busy = false;
+  }
+  const blob = await pBlob;
+  if (blob) { if (await offer(blob, name) === 'modal') toast('Archivo listo'); return blob; }
+  // toBlob devolvió null (lienzo demasiado grande para el navegador o memoria agotada): se reintenta a 1× una sola vez
+  if (k > 1 && !opts._retry) { P.exp.pngScale = 1; toast('No se pudo generar el PNG 2×: reintento a 1×', 4000); return snapshot({ ...opts, _retry:true }); }
+  toast('No se pudo generar el PNG. Prueba con un tamaño menor o recarga la página', 4500);
+  return null;
 }

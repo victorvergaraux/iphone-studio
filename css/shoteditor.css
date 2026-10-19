@@ -1,0 +1,98 @@
+/* Editor de cinemática: hermano visual de la card de exportación (.exp) y del onboarding (.onb). Flota a la derecha del rail. Solo tokens.
+   Sin bordes en controles: relleno tonal; el único filete de 1px (--line) es el separador de cabecera. Alto estable: el detalle
+   de la toma reserva su espacio y solo cambia su opacidad al seleccionar. */
+.se{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:320px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));max-height:calc(100vh - 2 * var(--gap));overflow-y:auto;scrollbar-width:none;
+  padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:14px;font-family:var(--f-text);color:var(--ink)}
+.se[hidden]{display:none}
+.se::-webkit-scrollbar{display:none}
+.se-head{display:flex;align-items:baseline;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.se-count{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:.9;letter-spacing:-.05em;margin-left:-2px;font-variant-numeric:tabular-nums}
+.se h2{margin:0;flex:1;font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;line-height:1}
+
+/* Deshacer / rehacer: botones icono sin borde (relleno tonal); deshabilitado = solo baja la opacidad. Tooltip data-tip: fade de opacidad */
+.se-ico{position:relative;align-self:center;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);cursor:pointer;transition:background var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.se-ico:hover:not(:disabled),.se-ico:focus-visible{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.se-ico:disabled{opacity:.3;cursor:default}
+.se-ico svg{width:14px;height:14px}
+.se-ico[data-tip]::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);right:0;white-space:nowrap;pointer-events:none;padding:6px 8px;border-radius:8px;background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));font-family:var(--f-text);font-size:11px;font-weight:500;color:var(--ink);opacity:0;transition:opacity 250ms var(--ease);z-index:1}
+@media (hover:hover){.se-ico[data-tip]:hover:not(:disabled)::after,.se-ico[data-tip]:focus-visible::after{opacity:1;transition-delay:300ms}}
+
+/* Lista: filas de alto fijo (40 px), scroll interno */
+.se-list{display:grid;gap:2px;align-content:start;max-height:216px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.se-list::-webkit-scrollbar{display:none}
+.se-empty{margin:0;padding:10px 8px;font-size:12px;line-height:1.5;color:var(--mute)}
+.se-row{position:relative;display:grid;grid-template-columns:24px 22px 1fr;align-items:center;gap:4px;height:40px;padding:0 6px 0 2px;border-radius:10px;transition:background var(--dur) var(--ease)}
+.se-row:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.se-row.on{background:color-mix(in srgb,var(--ink) 10%,transparent)}
+.se-row.drag{opacity:.45}
+.se-row.ins-b::before,.se-row.ins-a::after{content:"";position:absolute;left:4px;right:4px;height:2px;border-radius:1px;background:var(--ink);pointer-events:none}
+.se-row.ins-b::before{top:-2px}
+.se-row.ins-a::after{bottom:-2px}
+.se-grip{display:grid;place-items:center;width:24px;height:32px;padding:0;border:0;border-radius:8px;background:none;color:var(--mute);cursor:grab;touch-action:none}
+.se-grip:hover,.se-grip:focus-visible{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.se-grip:active{cursor:grabbing}
+.se-grip svg{width:14px;height:14px}
+.se-ord{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:-.02em;color:var(--mute);font-variant-numeric:tabular-nums}
+.se-row.on .se-ord{color:var(--ink)}
+.se-main,.se-edit{min-width:0;width:100%;height:34px;padding:0 8px;border:0;border-radius:8px;background:none;font-family:var(--f-text);color:var(--ink);text-align:left}
+.se-main{display:grid;align-content:center;gap:2px;cursor:pointer}
+.se-nm{font-size:13px;font-weight:500;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.se-sum{font-size:11px;font-weight:400;line-height:1.1;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-variant-numeric:tabular-nums}
+.se-edit{font-size:13px;font-weight:500;background:color-mix(in srgb,var(--ink) 10%,transparent)}
+
+/* Detalle de la toma seleccionada (alto reservado: sin saltos al seleccionar) */
+.se-detail{display:grid;gap:8px;align-content:start;min-height:216px;padding-top:12px;border-top:1px solid var(--line)}
+.se-tabs{width:100%}
+.se-dwrap{min-height:136px}
+.se-dwrap [hidden]{display:none}
+.se-dhead{height:16px;font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:-.01em;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.se-dbody{display:grid;gap:8px}
+.se-dbody.dis{opacity:.35}
+.se-row2{display:grid;grid-template-columns:48px 1fr 56px;align-items:center;gap:8px;min-height:28px}
+.se-row2.nog{grid-template-columns:48px 1fr}
+.se-sel{height:28px;min-width:0;width:100%;padding:0 8px;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.se-sel:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.se-sel{cursor:pointer;appearance:auto}
+
+/* Botones: relleno tonal; el principal se rellena de tinta */
+.se-b{height:28px;padding:0 8px;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),opacity var(--dur) var(--ease)}
+.se-b:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}
+.se-b.solid{background:var(--ink);color:var(--paper-2)}
+.se-b.solid:hover{background:color-mix(in srgb,var(--ink) 82%,var(--paper-2))}
+.se-b:disabled{opacity:.35;pointer-events:none}
+.se-g{padding:0 4px}
+.se-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.se-acts .se-wide{grid-column:1 / -1;height:36px}
+.se-preset{grid-column:1 / -1;display:grid;grid-template-columns:1fr 72px;gap:6px}
+.se :focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+/* Móvil: misma regla que las demás cards (nunca desborda ni tapa rail/dock; si no cabe, scroll interno) */
+@media (max-width:820px){
+  body .se{width:min(320px, calc(100vw - var(--rail-w) - 3 * var(--gap) - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)));
+    max-width:none;max-height:calc(100vh - 3 * var(--gap) - var(--dock-h,0px) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    max-height:calc(100dvh - 3 * var(--gap) - var(--dock-h,0px) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+  body.dock-hidden .se{max-height:calc(100dvh - 2 * var(--gap) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+  body .se .se-b,body .se .se-ico,body .se .exp-link,body .se .se-tgl,body .se-sel,body .se .exp-rng{min-height:var(--tap)}
+  body .se-grip{width:var(--tap)}
+  body .se-row{grid-template-columns:var(--tap) 22px 1fr;height:48px}
+  body .se-list{max-height:192px}
+  body .se-row2{grid-template-columns:48px 1fr 64px}
+  body .se-row2.nog{grid-template-columns:48px 1fr}
+}
+
+/* Sliders (Move / Hold): reutilizan .exp-sl / .exp-rng de export.css; el valor sin override se atenúa */
+.se-val{flex:0 0 auto;min-width:40px;text-align:right;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+.exp-sl.glob .se-val{color:var(--mute)}
+.exp-sl.glob .exp-rng{opacity:.55}
+
+/* Interruptor (Loop / Random): pista + perilla, sin borde; encendido = pista en tinta */
+.se-tgl{display:inline-flex;align-items:center;width:40px;height:28px;padding:0;border:0;background:none;cursor:pointer}
+.se-track{position:relative;display:block;width:28px;height:16px;border-radius:999px;background:var(--line);transition:background var(--dur) var(--ease)}
+.se-track i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--paper-2);transition:transform var(--dur) var(--ease)}
+.se-tgl[aria-checked="true"] .se-track{background:var(--ink)}
+.se-tgl[aria-checked="true"] .se-track i{transform:translateX(12px)}
+.se-rand{display:flex;align-items:center;gap:12px}
+.se-count2{width:72px}
+.se-count2 button:disabled{opacity:.35;pointer-events:none}
+.se-acts .se-wide2{grid-column:1 / -1}

@@ -15,5 +15,5 @@ export const P = {
   shots: { preset:'base', transition:0, hold:3, loop:true, randomHalf:false, halfCount:1 },
   quality:{ mode:'auto' },                 // auto | high | max (ver js/three/quality.js)
   ui:    { dock:true },                    // pantallas (dock) visibles: control propio, independiente del panel
-  exp:   { format:'Pantalla', long:1920, length:15, mbps:16, fps:30, pngScale:2, playShots:true, mode:'offline', container:'auto', transparent:false, shadowOpacity:0.45 },
+  exp:   { format:'9:16', kind:'png', long:1920, length:15, mbps:16, fps:30, pngScale:2, playShots:true, mode:'offline', container:'auto', transparent:false, shadowOpacity:0.45 },
 };

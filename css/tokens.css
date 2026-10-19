@@ -5,6 +5,8 @@
   --ink:#121211;        /* texto y bordes duros */
   --mute:#6f6d67;       /* secundarios */
   --line:#cdcac3;       /* filetes */
+  --white:#fff;         /* blanco puro: líneas de la retícula (con mix-blend-mode:difference) */
+  --black:#000;         /* negro puro: oscurecimiento (Dim) fuera del encuadre */
   --accent:#d6ff3d;     /* chartreuse, solo estados activos */
   --rec:#ff3b1f;        /* grabación */
   --f-display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
@@ -15,8 +17,7 @@
   color-scheme:light;
 
   /* Tweakpane theme */
-  --panel-a:0.1;  /* opacidad de fondo de los paneles (control temporal) */
-  --panel-blur:18px; /* desenfoque detrás de los paneles (control temporal) */
+  --panel-blur:18px; /* desenfoque fijo detrás de las cards (onboarding, export, dock, cinemática) */
   --tp-base-background-color:transparent;
   --tp-base-shadow-color:transparent;
   --tp-base-font-family:var(--f-mono);

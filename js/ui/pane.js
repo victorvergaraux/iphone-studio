@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
-import { $, DUR, EASE, toast } from '../core/utils.js';
+import { $, DUR, EASE } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { resetAll, saveSoon } from '../core/persist.js';
 import { camera, gradePass, gtao, renderer } from '../three/renderer.js';
@@ -12,10 +12,10 @@ import { S_ASPECT, anchor, mFrame, makeButtons } from '../three/iphone.js';
 import { applyTransitionMode, island, mGlass, screenMat } from '../three/screen.js';
 import { applySmudgeScale, prop, rebuildShape, setPose, smudgeU } from '../three/smudge.js';
 import { cur, goTo, items, nextIdx, scheduleCar, scrollTween, sel } from '../screens/carousel.js';
-import { CAM_EASES, SHOT_PRESETS, applyShotPreset, camTweening, shots } from '../three/camera.js';
+import { CAM_EASES, camTweening } from '../three/camera.js';
 import { panelOpen, setPanel } from '../three/format.js';
-import { addShot, deleteShot, togglePres, updateShot } from './strips.js';
-import { exportProject } from '../export/project.js';
+import { exportProject, applyAll } from '../export/project.js';
+import { record, reset as resetHistory } from '../core/history.js';
 import { hooks } from '../core/hooks.js';
 
 /* ───────────────────────── Tweakpane ───────────────────────── */
@@ -54,6 +54,7 @@ const SCENE_PRESETS = {
 };
 let applyingPreset = false;
 function applyScenePreset(k){
+  if (syncing) return; // un refresco (deshacer) no debe reaplicar la paleta sobre los colores restaurados
   const c = SCENE_PRESETS[k]; if (!c || applyingPreset) return;
   applyingPreset = true;
   Object.assign(P.scene, c);
@@ -82,7 +83,7 @@ const objPt = k => ({ get x(){ return P.scene[k + 'X']; }, set x(v){ P.scene[k +
                       get y(){ return P.scene[k + 'Y']; }, set y(v){ P.scene[k + 'Y'] = v; },
                       get z(){ return P.scene[k + 'Z']; }, set z(v){ P.scene[k + 'Z'] = v; } });
 tObjs.addBinding(P.scene, 'objPreset', { label:'Preset', options:Object.fromEntries(Object.entries(OBJ_PRESETS).map(([k, v]) => [v.label, k])) })
-  .on('change', () => { applyObjPreset(); pane.refresh(); });
+  .on('change', () => { if (syncing) return; applyObjPreset(); pane.refresh(); });
 for (const [k, label] of [['tower', 'Tower'], ['block', 'Block'], ['cyl', 'Cylinder'], ['sphere', 'Sphere']])
   tObjs.addBinding({ p: objPt(k) }, 'p', { label, picker:'inline', expanded:false,
     x:{ min:-8, max:8, step:0.05 }, y:{ min:0, max:6, step:0.05 }, z:{ min:-8, max:8, step:0.05 } })
@@ -132,6 +133,7 @@ tGlass.addBinding(P.phone, 'smudgeScale', { label:'Scale', min:0.3, max:6, step:
 const FINISHES = { 'Graphite':'graphite', 'Natural':'natural', 'Black':'black', 'White':'white', 'Desert':'desert', 'Blue':'blue' };
 const FINISH_COLORS = { graphite:'#4a4a4c', natural:'#b4afa6', black:'#2c2c2e', white:'#e2e1dc', desert:'#bfa58b', blue:'#3d4858' };
 tMetal.addBinding(P.phone, 'finish', { label:'Finish', options:FINISHES }).on('change', e => {
+  if (syncing) return;
   P.phone.frame = FINISH_COLORS[e.value]; mFrame.color.set(P.phone.frame); pane.refresh();
 });
 tMetal.addBinding(P.phone, 'frame', { label:'Color' }).on('change', e => mFrame.color.set(e.value));
@@ -168,7 +170,7 @@ tEdit.addBinding(OFF, 'xy', { label:'Offset', x:{ min:-0.5, max:0.5, step:0.001 
   .on('change', e => { EDIT.offX = e.value.x; EDIT.offY = e.value.y; pushEdit(); });
 const bScroll = tEdit.addBinding(EDIT, 'scroll', { label:'Scroll', min:0, max:1, step:0.001 }).on('change', () => { if (syncing) return; scrollTween?.kill(); pushEdit(); });
 tEdit.addBinding(EDIT, 'autoScroll', { label:'Auto' }).on('change', () => { if (syncing) return; pushEdit(); scheduleCar(); });
-tEdit.addButton({ title:'Reset' }).on('click', () => { const it = items[sel]; if (!it) return; const tall = it.aspect < S_ASPECT * .82; Object.assign(it, { fit: tall ? 'width' : 'cover', zoom:1, offX:0, offY:0, scroll: tall ? 0 : .5, autoScroll: tall }); refreshEdit(); scheduleCar(); });
+tEdit.addButton({ title:'Reset' }).on('click', () => { const it = items[sel]; if (!it) return; const tall = it.aspect < S_ASPECT * .82; Object.assign(it, { fit: tall ? 'width' : 'cover', zoom:1, offX:0, offY:0, scroll: tall ? 0 : .5, autoScroll: tall }); refreshEdit(); scheduleCar(); saveSoon(); });
 
 /* ── Camera: Lens (óptica + movimiento) · Grade (post) ── */
 const fC = pane.addFolder({ title:'Camera' });
@@ -177,56 +179,37 @@ tLens.addBinding(P.cam, 'fov', { label:'FOV', min:8, max:60, step:0.5 }).on('cha
 tLens.addBinding(P.cam, 'zoom', { label:'Zoom', min:0.5, max:4, step:0.01 }).on('change', e => { camera.zoom = e.value; camera.updateProjectionMatrix(); });
 tLens.addBinding(P.cam, 'ease', { label:'Ease', options:CAM_EASES });
 tLens.addBinding(P.cam, 'flyDur', { label:'Fly', min:0.3, max:6, step:0.05 });
-tLens.addBinding(P.cam, 'drift', { label:'Drift', min:0, max:2, step:0.01 });
-tLens.addBinding(P.cam, 'driftSpeed', { label:'Rate', min:0.05, max:2, step:0.01 });
+tLens.addBinding(P.cam, 'drift', { label:'Drift', min:0, max:4, step:0.01 });
+tLens.addBinding(P.cam, 'driftSpeed', { label:'Rate', min:0.05, max:4, step:0.01 });
 tGrade.addBinding(P.grade, 'brightness', { label:'Bright', min:-0.3, max:0.3, step:0.005 }).on('change', e => gradePass.uniforms.uBrightness.value = e.value);
 tGrade.addBinding(P.grade, 'contrast', { label:'Contrast', min:0.6, max:1.6, step:0.01 }).on('change', e => gradePass.uniforms.uContrast.value = e.value);
 tGrade.addBinding(P.grade, 'vignette', { label:'Vignette', min:0, max:0.8, step:0.01 }).on('change', e => gradePass.uniforms.uVignette.value = e.value);
 tGrade.addBinding(P.grade, 'grain', { label:'Grain', min:0, max:0.12, step:0.001 }).on('change', e => gradePass.uniforms.uGrain.value = e.value);
 
-/* ── Shots: play → ritmo → edición (1 fila) → presets → lista ── */
-const fT = pane.addFolder({ title:'Shots' });
-export const btnPlay = fT.addButton({ title:'▶ Play  [Space]' }).on('click', togglePres);
-fT.addBinding(P.shots, 'transition', { label:'Move', min:0, max:8, step:0.05 }); // 0 = corte seco
-fT.addBinding(P.shots, 'hold', { label:'Hold', min:0, max:6, step:0.1 });
-fT.addBinding(P.shots, 'loop', { label:'Loop' });
-fT.addBinding(P.shots, 'randomHalf', { label:'Random' });
-fT.addBinding(P.shots, 'halfCount', { label:'Count', min:1, max:2, step:1 });
-row(fT, ['Save [S]', 'Update', 'Delete'], [addShot, updateShot, deleteShot]);
-fT.addBinding(P.shots, 'preset', { label:'Preset', options:Object.fromEntries(Object.entries(SHOT_PRESETS).map(([k, v]) => [v.label, k])) });
-fT.addButton({ title:'Load preset' }).on('click', applyShotPreset);
-// Copy JSON: lista de tomas (mismo formato que el proyecto: p = posición, t = target, fov, name) al portapapeles
-fT.addButton({ title:'Copy JSON' }).on('click', async () => {
-  const json = JSON.stringify(shots.map(({ p, t, fov, name }) => ({ p, t, fov, name })), null, 2);
-  try { await navigator.clipboard.writeText(json); }
-  catch { const ta = Object.assign(document.createElement('textarea'), { value:json }); document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-  toast(`${shots.length} toma(s) copiadas como JSON`);
-});
-export const fList = fT.addFolder({ title:'List' });
-export let shotBtns = [];
+/* Shots: ya no vive en el panel avanzado; todo (lista, ritmo global, presets, copiar JSON) está en la card «Cinemática» (js/ui/shoteditor.js). */
 
 /* ── UI (temporal, no se guarda) + proyecto JSON ── */
-const UI_TMP = { panelOpacity:0.1, panelBlur:18, guideDim:0.3, showGrid:true, showFrame:true };
+const UI_TMP = { guideDim:0.8, showGrid:true, showFrame:true };
 const fUI = pane.addFolder({ title:'UI' });
-fUI.addBinding(UI_TMP, 'panelOpacity', { label:'Opacity', min:0, max:1, step:0.01 })
-  .on('change', e => document.documentElement.style.setProperty('--panel-a', e.value));
-fUI.addBinding(UI_TMP, 'panelBlur', { label:'Blur', min:0, max:60, step:1 })
-  .on('change', e => document.documentElement.style.setProperty('--panel-blur', `${e.value}px`));
-fUI.addBinding(UI_TMP, 'guideDim', { label:'Dim', min:0, max:1, step:0.01 })
+fUI.addBinding(UI_TMP, 'guideDim', { label:'Dim', min:0.1, max:1, step:0.01 })
   .on('change', e => document.documentElement.style.setProperty('--guide-dim', e.value));
 fUI.addBinding(UI_TMP, 'showGrid', { label:'Grid' }).on('change', e => document.body.classList.toggle('no-grid', !e.value));
 fUI.addBinding(UI_TMP, 'showFrame', { label:'Frame' }).on('change', e => document.body.classList.toggle('no-frame', !e.value));
 fUI.addBlade({ view:'separator' });
 row(fUI, ['Export', 'Import'], [exportProject, () => $('#projFile').click()], 'JSON');
 // Kill cache: formatea todos los ajustes y tomas guardados en el navegador (pide confirmación; no se puede deshacer)
-fUI.addButton({ title:'Clear', label:'Cache' }).on('click', () => { if (confirm('¿Borrar todos los ajustes y tomas guardados y volver a los valores iniciales?')) resetAll(); });
-// Arranque limpio: todo colapsado salvo Scene y Shots (lo que más se usa al componer)
-pane.children.forEach(c => { if ('expanded' in c && c !== fS && c !== fT) c.expanded = false; });
-pane.on('change', () => { if (!syncing) saveSoon(); }); // cambios del usuario → guardado (los refrescos internos no cuentan)
+fUI.addButton({ title:'Clear', label:'Cache' }).on('click', () => { if (confirm('¿Borrar todos los ajustes y tomas guardados y volver a los valores iniciales?')) { resetHistory(); resetAll(); } });
+// Arranque limpio: todo colapsado salvo Scene (lo que más se usa al componer)
+pane.children.forEach(c => { if ('expanded' in c && c !== fS) c.expanded = false; });
+pane.on('change', e => { // cambios del usuario → guardado + historial (los refrescos internos no cuentan)
+  if (syncing) return; saveSoon();
+  const t = e.target, label = t?.label || t?.key || '';
+  queueMicrotask(() => record(`ajuste ${label}`.trim(), { key:`${label}/${t?.key ?? ''}`, last:e.last !== false })); // microtarea: los handlers del control ya aplicaron P
+});
+// Deshacer/rehacer de ajustes: re-aplica P a la escena y refresca el panel sin disparar entradas de historial
+hooks.applySettings = async () => { syncing = true; try { await applyAll({ cam:false }); } finally { syncing = false; } };
 
-// Los importadores no pueden reasignar un binding: se expone un setter.
-export const setShotBtns = v => { shotBtns = v; };
 
 hooks.refreshEdit = refreshEdit;
 hooks.refreshScroll = refreshScroll;
-hooks.refreshPane = () => pane.refresh();
+hooks.refreshPane = () => { quietRefresh(); saveSoon(); }; // refresco silencioso: Tweakpane emite 'change' al refrescar y eso llenaría el historial de entradas falsas

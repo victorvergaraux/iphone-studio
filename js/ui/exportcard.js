@@ -3,17 +3,19 @@ import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { catcher } from '../three/scene.js';
 import { FORMATS, exportSize, layout } from '../three/format.js';
+import { presentationLength, shots } from '../three/camera.js';
 import { snapshot } from '../export/export.js';
 import { startRecording } from '../export/offline.js';
 import { closeOnboarding, onboardingOpen } from './onboarding.js';
+import { closeShotEditor, shotEditorOpen } from './shoteditor.js';
 
 /* ───────────────────────── Card de exportación ─────────────────────────
    Flota a la derecha del rail (mismo sitio y estilo que el onboarding). Esencial siempre visible:
    formato · tamaño · lectura de salida · PNG | Video · duración · botón principal.
    «Más ajustes» (colapsable) guarda lo fino. Todo se escribe en P.exp (se guarda y exporta con el proyecto);
-   el tipo PNG | Video es solo estado de UI. Alto fijo entre PNG y Video: los dos paneles de «Más» comparten celda. */
+   el tipo PNG | Video también (P.exp.kind). Alto fijo entre PNG y Video: los dos paneles de «Más» comparten celda. */
 const card = $('#expCard'), btn = $('#railExport'), go = $('#expGo');
-let kind = 'png'; // 'png' | 'video'
+let shown = 'png'; // tipo mostrado ahora (solo para animar el cambio); la fuente de verdad es P.exp.kind ('png' | 'video')
 const syncs = []; // funciones que releen P.exp y repintan sus controles
 
 // Solo opacidad (sin movimiento en Y), igual que el onboarding: entra power2.out, sale power2.in
@@ -37,7 +39,7 @@ function row(parent, label, control, cls = ''){
   r.append(l, control); parent.append(r); return r;
 }
 // Cambia un valor de P.exp, lo persiste y ejecuta efectos extra
-const setP = (key, after) => v => { P.exp[key] = v; saveSoon(); after?.(); };
+const setP = (key, after) => v => { P.exp[key] = v; saveSoon(); after?.(); info(); };
 const seg1 = (key, opts, after) => seg(opts, () => P.exp[key], setP(key, after));
 const YN = [['No', false], ['Sí', true]];
 
@@ -47,11 +49,27 @@ const readout = () => { const [w, h] = exportSize(); size.textContent = `${w}×$
 const onGeom = () => { layout(); readout(); };
 addEventListener('resize', readout); // «Pantalla» depende de la ventana
 
+/* Info bajo la lectura: 2 líneas con alto reservado (solo cambia visibility) para que PNG ↔ Video no mueva la card.
+   · Video: tamaño estimado (mbps × duración / 8) y número de cuadros (duración × fps).
+   · Formato «Pantalla»: aviso de que el ratio depende de la ventana. */
+const outBox = size.parentElement;
+const mkNote = () => { const s = document.createElement('span'); s.className = 'exp-note'; outBox.append(s); return s; };
+const noteVid = mkNote(), noteFmt = mkNote();
+// Duración efectiva del video: igual que startRecording (0 = «Shots» → largo de la presentación, o 15 s sin tomas)
+const videoLen = () => P.exp.length || (P.exp.playShots && shots.length > 0 ? presentationLength() : 15);
+function info(){
+  const len = videoLen(), mb = P.exp.mbps * len / 8, frames = Math.round(len * P.exp.fps);
+  noteVid.textContent = `≈ ${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB · ${frames} cuadros`;
+  noteVid.style.visibility = P.exp.kind === 'video' ? 'visible' : 'hidden';
+  noteFmt.textContent = 'Pantalla: depende de tu ventana';
+  noteFmt.style.visibility = P.exp.format === 'Pantalla' ? 'visible' : 'hidden';
+}
+
 /* ── Esencial ── */
 const main = $('#expMain');
 row(main, 'Formato', seg1('format', Object.keys(FORMATS).map(k => [k, k]), onGeom), 'wide');
 row(main, 'Tamaño', seg1('long', [['HD', 1280], ['FHD', 1920], ['QHD', 2560], ['4K', 3840]], onGeom));
-row(main, 'Tipo', seg([['PNG', 'png'], ['Video', 'video']], () => kind, v => setKind(v)));
+row(main, 'Tipo', seg([['PNG', 'png'], ['Video', 'video']], () => P.exp.kind, v => setKind(v)));
 const durRow = row(main, 'Duración', seg1('length', [['15 s', 15], ['30 s', 30], ['Shots', 0]]));
 
 /* ── Más ajustes ── */
@@ -77,8 +95,10 @@ syncs.push(shade, syncShadow); shade(); syncShadow();
 /* ── Tipo PNG | Video: cambia botón, fila de duración y panel de «Más» sin mover la card ── */
 const panes = { video:vid, png };
 function setKind(k, instant){
-  const prev = kind; kind = k;
-  syncs.forEach(f => f());
+  if (k !== 'png' && k !== 'video') k = 'png';
+  const prev = shown; shown = k;
+  if (P.exp.kind !== k) { P.exp.kind = k; saveSoon(); } // persiste el tipo
+  syncs.forEach(f => f()); info();
   go.textContent = k === 'png' ? 'Capturar PNG' : 'Renderizar video';
   durRow.classList.toggle('off', k === 'png'); // reserva su alto: solo se oculta
   durRow.toggleAttribute('inert', k === 'png');
@@ -89,7 +109,7 @@ function setKind(k, instant){
     else { el.setAttribute('inert', ''); fade(el, 0, .18, 'power2.in', () => el.classList.add('off')); }
   }
 }
-go.onclick = () => kind === 'png' ? snapshot() : startRecording();
+go.onclick = () => P.exp.kind === 'png' ? snapshot() : startRecording();
 
 /* ── Colapsable «Más ajustes»: anima alto + opacidad con el EASE/DUR del proyecto ── */
 const moreT = $('#expMoreT'), moreB = $('#expMoreBody');
@@ -108,8 +128,9 @@ moreB.setAttribute('inert', '');
 export const exportOpen = () => !card.hidden;
 export function openExport(){
   if (onboardingOpen()) closeOnboarding({ mark:false }); // exclusión mutua: el onboarding no se marca como visto
+  if (shotEditorOpen()) closeShotEditor(); // ...y el editor de cinemática
   if (!card.hidden) return;
-  syncs.forEach(f => f()); readout();
+  syncs.forEach(f => f()); readout(); info(); // relee P: el onboarding pudo cambiar el formato
   card.hidden = false; btn.setAttribute('aria-expanded', 'true');
   gsap.set(card, { opacity:0 }); fade(card, 1, .6, 'power2.out');
 }
@@ -122,4 +143,4 @@ btn.onclick = () => btn.getAttribute('aria-expanded') === 'true' ? closeExport()
 $('#expClose').onclick = closeExport;
 addEventListener('keydown', e => { if (e.key === 'Escape' && !card.hidden) closeExport(); });
 
-setKind('png', true); readout();
+setKind(P.exp.kind, true); readout();

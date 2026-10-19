@@ -12,6 +12,8 @@
 /* Lectura grande de la salida (cifra display, como el número del onboarding) */
 .exp-out{display:grid;gap:6px}
 .exp-size{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:.9;letter-spacing:-.05em;margin-left:-2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* Notas bajo la lectura: alto reservado (solo cambia visibility) para que PNG ↔ Video y los formatos no muevan la card */
+.exp-note{font-size:11px;font-weight:500;line-height:14px;height:14px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap}
 .exp-main{display:grid;gap:10px}
 .exp-row{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px}
 .exp-row.wide{grid-template-columns:1fr;gap:6px}
@@ -36,3 +38,8 @@
 .exp-sl{display:flex;align-items:center;gap:8px}
 .exp-rng{flex:1;min-width:0;accent-color:var(--ink);height:28px;margin:0}
 .exp-val{width:34px;text-align:right;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
+/* Onboarding · paso «Exportar»: selector de formato + lectura de salida. Las reglas viven aquí (no en main.css) con selector específico */
+.onb .onb-body{height:304px} /* sube una sola vez para TODOS los pasos (antes 256 px): cabe el selector sin desbordar */
+.onb .onb-fmt{display:grid;gap:6px}
+.onb .onb-fmt .exp-seg button{height:26px;padding:0 4px;font-size:11px}
+.onb .onb-fmt-out{font-size:11px;font-weight:500;line-height:14px;height:14px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
