@@ -64,7 +64,8 @@ import './core/history.js'; // deshacer / rehacer (tomas + ajustes)
     if (loads.length) add(await loads[0]);
     (async () => {
       for (const l of loads.slice(1)) add(await l); // orden = orden del manifiesto aunque lleguen desordenadas
-      if (loads.length > 1) { renderStrip(); refreshEdit(); }
+      // Con una sola pantalla scheduleCar() no programa el avance (necesita ≥ 2): hay que reprogramarlo cuando llegan las demás, si no el carrusel nunca arranca
+      if (loads.length > 1) { renderStrip(); refreshEdit(); scheduleCar(); }
     })();
   }
   // tomas guardadas solo si alguna es tuya; si todas eran de ejemplo, se regeneran con el preset

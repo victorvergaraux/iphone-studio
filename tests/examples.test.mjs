@@ -36,3 +36,16 @@ await run('ejemplos · no se piden con pantallas propias', async ({ page, url, o
   eq(await page.evaluate(async () => (await import('/js/screens/carousel.js')).items.map(i => i.name)), ['mine.png'], 'se restaura la propia');
   eq(hits, [], 'no se pide ningún JPEG de ejemplo');
 });
+
+// El carrusel arranca solo: con el autoplay activo (por defecto) la pantalla activa cambia sin tocar nada.
+// Regresión: scheduleCar() corría con 1 sola pantalla cargada (el resto llega en segundo plano) y nunca se reprogramaba.
+await run('ejemplos · el carrusel avanza solo al arrancar', async ({ page, ok, boot }) => {
+  await boot();
+  await page.evaluate(() => gsap.ticker.lagSmoothing(0));
+  const st = () => page.evaluate(async () => { const c = await import('/js/screens/carousel.js'); return { cur: c.cur, next: c.nextIdx, n: c.items.length, playing: c.carPlaying }; });
+  const a = await st();
+  ok(a.n >= 5 && a.playing, `5 ejemplos cargados y autoplay activo (${JSON.stringify(a)})`);
+  const seen = new Set([a.cur]);
+  for (let i = 0; i < 40 && seen.size < 3; i++) { await page.waitForTimeout(500); const s = await st(); seen.add(s.cur); }
+  ok(seen.size >= 2, `la pantalla activa cambia sola (índices vistos: ${[...seen].join(', ')})`);
+});

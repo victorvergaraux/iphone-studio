@@ -25,7 +25,7 @@ import { setupUI } from './pane/ui.js';
 export { refreshEdit };
 
 // Panel raíz con título: Tweakpane dibuja su propia barra plegable → minimiza TODO el panel
-export const pane = new Pane({ container: $('#pane'), title:'Controls', expanded: panelOpen() });
+export const pane = new Pane({ container: $('#pane'), title:'Controles avanzados', expanded: panelOpen() });
 pane.registerPlugin(EssentialsPlugin);
 initShared(pane);
 // Medidor de FPS: vive dentro del panel raíz → solo se ve con el panel desplegado. loop.js lo alimenta vía hooks (begin/end por cuadro)

@@ -1,4 +1,4 @@
-import { run } from './helpers.mjs';
+import { run, openDock } from './helpers.mjs';
 
 // Etapa 1 · coherencia: textos «cinemática», toast/aviso con el estilo de las cards, motivo «Palette» y hover solo con puntero.
 await run('etapa 1 · textos, toast, motivo de paleta y hover', async ({ page, ok, eq, boot }) => {
@@ -71,6 +71,8 @@ await run('etapa 1 · sin hover pegado en táctil', async ({ page, ok, boot }) =
   await page.evaluate(() => gsap.ticker.lagSmoothing(0));
   ok(await page.evaluate(() => !matchMedia('(hover:hover)').matches), 'el contexto táctil no reporta hover');
   await page.addStyleTag({ content:'*,*::before,*::after{transition:none!important;animation:none!important}' }); // con WebGL por software la página va a ~1 fps y las transiciones se leen desfasadas
+  await openDock(page); // el dock arranca oculto
+  await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
   const bg = sel => page.evaluate(s => getComputedStyle(document.querySelector(s)).backgroundColor, sel);
   const before = await bg('#scrPlay');
   await page.tap('#scrPlay'); await page.waitForTimeout(500);

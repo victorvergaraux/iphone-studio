@@ -13,7 +13,7 @@ Fullscreen Three.js iPhone mockup. Shows mobile screens (images/video, carousel 
   - `export/` export (PNG, `offer()`) · offline (frame-by-frame video) · videosync (sync source videos to the virtual clock) · project (JSON v3 project, import/validation)
   - `data/` minimal manifests (no base64): `examples-data.js` → `assets/examples/ex-01.jpg…` (original JPEGs, not re-encoded) · `smudge-map.js` → `assets/smudge-map.jpg`.
   - `main.js` — load order + Boot.
-- **Left rail** (`#rail`, top→bottom): Help (onboarding) · Export · Dock toggle · Controls panel toggle · Cinematics editor · Play (accent). Cards (onboarding, export, cinematics) anchor to its right and are mutually exclusive. Dock visibility = `P.ui.dock` (key `D`), independent of the Controls panel; the Controls panel is hidden entirely when collapsed.
+- **Left rail** (`#rail`, top→bottom): Help (onboarding) · Export · Dock toggle · Cinematics editor · Controles avanzados (the Tweakpane panel, titled «Controles avanzados»). There is no Play button in the rail: play/stop lives in the cinematics card (accent button, `hooks.shotEditorPlay`) and the `Space` key. Cards (onboarding, export, cinematics) anchor to its right and are mutually exclusive. Dock visibility = `P.ui.dock` (key `D`), **hidden by default** (`<body class="dock-hidden">` so it never animates out at load; transitions turn on with `body.ui-ready`), independent of the advanced panel, which is hidden entirely when collapsed.
 - A `let` reassigned from another module exposes `setX(v)` (e.g. `setCur`, `setShots`). Low layers call the UI through `hooks.*` to avoid circular imports (TDZ errors).
 - No build step. Run `npm start` (static server on :5173). Do not open via `file://`.
 
@@ -35,7 +35,7 @@ Parameters `P` (single source of truth) → Persistence (`localStorage` key `moc
 - Hover styles only inside `@media (hover:hover)` (no sticky hover on touch); tooltips via `data-tip` (rail, icon buttons).
 - Shaders: explain with comments.
 - Grid (thirds) draws over the active frame (full viewport for `Pantalla`, via `gridRect`; `guide` stays null for `Pantalla` and is the export rect), `mix-blend-mode:difference` in its own node (a child of `#guide` would not see the canvas). Hidden while the cinematic plays (`body.pres-playing`) and while recording; `no-grid` is the user toggle.
-- Quality: `P.quality.mode` auto (adaptive pixel ratio only while moving) · high · max. PNG export accumulates jittered samples (8/12/16 by mode); the export path is independent of the preview quality.
+- Quality: `P.quality.mode` auto (adaptive pixel ratio only while moving; every resolution change is a visible flicker, so it only steps UP when the predicted FPS at the higher resolution stays ≥ 45 × 1.3 — see `tests/quality-auto.test.mjs`) · high · max. PNG export accumulates jittered samples (8/12/16 by mode); the export path is independent of the preview quality.
 - Exports: every downloaded file gets a random 5-char code (`offer()` → `name-XXXXX.ext`). Default format 9:16; PNG/Video kind persists in `P.exp.kind`.
 - Video export must restart the carousel at image 1; offline mode = frame-by-frame with a virtual GSAP clock; source videos are paused and seeked to the virtual time (`videosync.js`).
 - Persist new params through `P` so they save/import automatically; "UI · temporal" values (`UI_TMP`) are intentionally not saved. Project JSON is `version:3` (settings + shots + screens; videos > 25 MB are skipped with a notice); v2 still imports.
@@ -47,6 +47,7 @@ Parameters `P` (single source of truth) → Persistence (`localStorage` key `moc
 - `node tools/unused.mjs` writes `tools/unused-report.md` (unused exports/imports/CSS, dead hooks, stale comments). Test-only exports (`info`, `limits`, `snap`, `commitShots`, `glLost`, `videoSyncActive`) are intentional test seams.
 
 ## Gotchas
+- `scheduleCar()` needs ≥ 2 screens to arm the auto-advance: examples load in the background after the first one, so `main.js` calls `scheduleCar()` again when they arrive (regression test in `tests/examples.test.mjs`).
 - `downloads` artifact capability exists only inside claude.ai; outside it `offer()` falls back to a modal/anchor download — test PNG + video locally.
 - Headless testing uses Swiftshader: inject `gsap.ticker.lagSmoothing(0)` so timings are real; `requestAnimationFrame` can be very slow there (don't depend on it for UI state).
 - Glass/island/screen are excluded from the GTAO G-buffer via an `overrideVisibility` wrapper; don't reintroduce a 2D AO mask.

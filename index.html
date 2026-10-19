@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/export.css">
 <link rel="stylesheet" href="css/shoteditor.css">
 
+<body class="dock-hidden"> <!-- el dock arranca oculto (sin parpadeo): dockToggle.js lo muestra si el usuario lo dejó visible -->
 <canvas id="c" aria-label="Escena 3D del mockup. Arrastra para orbitar, rueda para acercar."></canvas>
 <div class="guide" id="guide" hidden><span id="guideLbl">9:16</span></div>
 <div class="gstroke" id="gstroke" aria-hidden="true" hidden></div>
@@ -53,9 +54,8 @@
   <button class="btn icon" id="onbHelp" data-tip="Instrucciones" aria-label="Abrir introducción" aria-expanded="false"><i data-lucide="circle-help"></i></button>
   <button class="btn icon" id="railExport" data-tip="Exportar" aria-label="Exportar" aria-expanded="false"><i data-lucide="download"></i></button>
   <button class="btn icon" id="railDock" data-tip="Pantallas · D" aria-label="Mostrar u ocultar pantallas" aria-pressed="true"><i data-lucide="panel-bottom"></i></button>
-  <button class="btn icon" id="railPanel" data-tip="Controles" aria-label="Mostrar u ocultar controles avanzados" aria-pressed="false"><i data-lucide="sliders-horizontal"></i></button>
   <button class="btn icon" id="railShots" data-tip="Cinemática" aria-label="Editor de cinemática" aria-expanded="false" aria-controls="shotEditor"><i data-lucide="list-video"></i></button>
-  <button class="btn icon" id="railPlay" data-tip="Cinemática · Espacio" aria-label="Reproducir cinemática" aria-pressed="false"><i data-lucide="clapperboard"></i></button>
+  <button class="btn icon" id="railPanel" data-tip="Controles avanzados" aria-label="Mostrar u ocultar controles avanzados" aria-pressed="false"><i data-lucide="sliders-horizontal"></i></button>
 </nav>
 <aside class="onb ui" id="onb" role="dialog" aria-label="Introducción" hidden>
   <div class="onb-bars" aria-hidden="true"><i></i><i></i><i></i></div>

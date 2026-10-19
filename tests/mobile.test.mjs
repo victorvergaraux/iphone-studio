@@ -1,11 +1,11 @@
-import { run } from './helpers.mjs';
+import { run, openDock } from './helpers.mjs';
 
 // Mobile (390×844, táctil): sin scroll horizontal, sin solapes rail/dock/cards, objetivos ≥ 40 px, doble toque reencuadra.
 const rects = sel => `[...document.querySelectorAll('${sel}')].map(e => { const r = e.getBoundingClientRect(); return { id:e.id, x:r.x, y:r.y, w:r.width, h:r.height, r:r.right, b:r.bottom }; })`;
 const overlap = (a, b) => a.x < b.r - 0.5 && b.x < a.r - 0.5 && a.y < b.b - 0.5 && b.y < a.b - 0.5;
 
 await run('mobile · layout y gestos', async ({ page, ok, boot, errors }) => {
-  await boot();
+  await boot(); await openDock(page);
   const W = 390, H = 844;
   ok(await page.evaluate(() => !!document.querySelector('meta[name=viewport][content*="width=device-width"]')), 'meta viewport presente');
   ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.body.scrollWidth <= innerWidth), 'sin scroll horizontal');

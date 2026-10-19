@@ -54,3 +54,8 @@ export async function run(name, fn, opts){
   process.exitCode = fails ? 1 : process.exitCode;
   return !fails;
 }
+
+// El dock (barra de pantallas) arranca oculto: los tests que lo miden o lo tocan lo abren con el botón del rail y esperan a que termine de deslizarse.
+export async function openDock(page){
+  if (await page.evaluate(() => document.body.classList.contains('dock-hidden'))) { await page.evaluate(() => document.querySelector('#railDock').click()); await page.waitForTimeout(1500); }
+}

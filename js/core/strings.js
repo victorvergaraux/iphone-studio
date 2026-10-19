@@ -66,7 +66,6 @@ export const T = {
 
   /* Rail y tira de pantallas (strips.js, shotbar.js) */
   rail: {
-    stopTip: 'Detener · Espacio', playTip: 'Cinemática · Espacio',
     stopAria: 'Detener cinemática', playAria: 'Reproducir cinemática',
     pauseCar: 'Pausar carrusel', resumeCar: 'Reanudar carrusel',
     videoBadge: 'VIDEO',

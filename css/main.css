@@ -65,6 +65,8 @@ body.panel-closed .side{opacity:0;visibility:hidden;pointer-events:none;transiti
   border-radius:var(--radius);box-shadow:none;
   background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));border:0;font-family:var(--f-text);
   transition:right var(--dur) var(--ease),transform var(--dur) var(--ease)}
+/* Sin animación al arrancar: las transiciones del dock y la línea de tiempo se activan cuando dockToggle.js añade `ui-ready` */
+body:not(.ui-ready) .dock,body:not(.ui-ready) .shotbar{transition:none!important}
 /* El dock solo depende del botón del rail / tecla D (clase dock-hidden), NO del panel de ajustes. Se desliza fuera hacia abajo. */
 body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));pointer-events:none;visibility:hidden;
   transition:right var(--dur) var(--ease),transform var(--dur) var(--ease),visibility 0s linear var(--dur)} /* visibility tras el slide: fuera del foco/tab */
@@ -152,11 +154,6 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 }
 .rail .btn[aria-pressed="true"],.rail .btn[aria-expanded="true"]{background:var(--ink);color:var(--paper-2)}
 @media (hover:hover){.rail .btn:hover{background:var(--ink);color:var(--paper-2)}}
-/* Play: acción primaria, en --accent para distinguirlo; reproduciendo → tinta con icono accent */
-.rail #railPlay{background:var(--accent);color:var(--ink)}
-.rail #railPlay[aria-pressed="true"]{background:var(--ink);color:var(--accent)}
-@media (hover:hover){.rail #railPlay:hover{background:var(--ink);color:var(--accent)}}
-.rail #railPlay[aria-pressed="true"] svg{fill:currentColor} /* stop relleno; la claqueta queda de trazo para conservar su detalle */
 .onb{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:300px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));
   padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:16px;font-family:var(--f-text)}
 .onb .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;height:30px;padding:0 12px}

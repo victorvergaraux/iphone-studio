@@ -27,15 +27,14 @@ The **rail** on the left holds the tools (hover a button for its name):
 | --- | --- |
 | **?** Instructions | Reopens the onboarding |
 | **Export** | Opens the export card |
-| **Screens** (`D`) | Shows / hides the screens bar at the bottom |
-| **Controls** | Shows / hides the advanced Controls panel |
+| **Screens** (`D`) | Shows / hides the screens bar at the bottom (hidden by default) |
 | **Cinematic** | Opens the cinematics editor |
-| **Play** (`Space`) | Plays / stops the cinematic (it turns dark and shows a stop icon while running) |
+| **Controles avanzados** | Shows / hides the advanced Controls panel |
 
-1. **Load your screens.** Drag & drop files onto the page, paste from the clipboard, or use **Cargar** in the screens bar. Images and videos both work. **Reemplazar todo** (on by default): on = new screens replace the current ones, off = they are added. Use the arrows and the trash icon to reorder or delete the selected screen. Your screens are kept in the browser between sessions.
+1. **Load your screens.** Drag & drop files onto the page, paste from the clipboard, or open the screens bar (**Screens** button or `D`) and use **Cargar**. Images and videos both work. **Reemplazar todo** (on by default): on = new screens replace the current ones, off = they are added. Use the arrows and the trash icon to reorder or delete the selected screen. Your screens are kept in the browser between sessions.
 2. **Move the camera.** Drag to orbit, scroll (or pinch) to zoom. You can go low and look up. Double-tap / double-click the scene to re-frame the current shot.
 3. **Build the cinematic.** Open the cinematics card: press **Guardar cámara** (or `S`) to save the current view as a *toma* (shot). Click a toma to fly to it, drag the handle to reorder, rename, duplicate or delete it. Tab **Global** sets the rhythm of the whole cinematic (*Move* = travel time, `0` = hard cut; *Hold* = how long each stays; *Loop*, *Random*). Tab **Toma** overrides *Move*, *Hold* and *Ease* for the selected toma only. Presets: Base, Product, Detail, Editorial, Vic. **Copiar JSON** copies the list. The accent button at the top of the actions, **Reproducir cinemática**, plays / stops the cinematic from inside the card (same state as the rail's Play).
-4. **Play it.** Press `Space` or the Play button. A timeline above the screens bar shows each toma as a dot and fills as it plays (it is never part of an exported image or video).
+4. **Play it.** Press `Space` or the **Reproducir cinemática** button inside the cinematics card. A timeline above the screens bar shows each toma as a dot and fills as it plays (it is never part of an exported image or video).
 5. **Export.** Open the export card: pick *Formato* (9:16 by default, 4:5, 1:1, 16:9, 3:2 or *Pantalla*), *Tamaño* (HD → 4K) and *Tipo* PNG or Video; the card shows the exact output size, and for video the estimated file size and frame count. PNG can have a transparent background (*Alpha*, with its own shadow opacity). Video offers *Duración*, FPS, bitrate, codec and mode under **Más ajustes**.
 
 Every downloaded file gets a random 5-character code (`name-XXXXX.ext`).
@@ -44,7 +43,7 @@ Every downloaded file gets a random 5-character code (`name-XXXXX.ext`).
 
 | Key | Action |
 | --- | --- |
-| `Space` | Play / stop the cinematic |
+| `Space` | Play / stop the cinematic (also the accent button in the cinematics card) |
 | `S` | Save the current view as a toma |
 | `D` | Show / hide the screens bar |
 | `←` / `→` | Previous / next screen |
@@ -52,7 +51,7 @@ Every downloaded file gets a random 5-character code (`name-XXXXX.ext`).
 | `Ctrl/Cmd + Shift + Z` / `Ctrl + Y` | Redo |
 | `Esc` | Close the open card |
 
-## Controls panel (advanced)
+## Controles avanzados (advanced panel)
 
 | Folder | What it controls |
 | --- | --- |

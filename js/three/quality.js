@@ -6,6 +6,10 @@ import { exporting, pr, recording, setPr, setQuality, setRenderSize } from './se
    max  → pixel ratio nativo (tope 3) + AO 24 muestras + sombra 4096 también en preview (ver setQuality en session.js).
    auto → igual que High, pero SOLO baja el pixel ratio (AO, sombras y MSAA no se tocan) si el FPS medio cae bajo
           BAD_FPS mientras hay movimiento. Sube de nuevo al quedar quieto o al "sondear" tras un tiempo.
+          Estabilidad: cada cambio de resolución se nota como un parpadeo (toda la imagen cambia de nitidez), así que nunca se
+          sondea hacia arriba «a ciegas»: el coste del cuadro escala con los píxeles (fps ∝ 1/pr²), por lo que se PREDICE el FPS
+          a la resolución superior y solo se sube si seguiría holgado (≥ BAD_FPS × HEADROOM). Sin eso el equipo oscilaba
+          bajar → sondear → bajar cada 10–60 s.
    El export (PNG/video) no pasa por aquí: usa su propia ruta beginExport/setQuality(true). */
 const BAD_FPS = 45;      // FPS medio (ventana de WINDOW) bajo el cual auto reduce resolución
 const WINDOW = 1000;     // ms de la ventana de promedio
@@ -13,7 +17,8 @@ const STILL_MS = 600;    // ms sin movimiento antes de restaurar calidad complet
 const STEP = 0.25;       // salto del pixel ratio por paso
 const FLOOR = 1;         // piso del pixel ratio en auto
 const COOLDOWN = 1500;   // ms mínimos entre dos bajadas (histéresis: hay que medir una ventana fresca)
-const PROBE_MIN = 10000, PROBE_MAX = 60000; // sondeo para subir un paso si la escena nunca queda quieta (animación idle)
+const PROBE_MIN = 30000, PROBE_MAX = 180000; // sondeo para subir un paso si la escena nunca queda quieta (animación idle)
+const HEADROOM = 1.3;    // histéresis: solo se sube un paso si el FPS PREDICHO a la resolución mayor sigue ≥ BAD_FPS × HEADROOM
 
 const fullPr = () => Math.min(devicePixelRatio || 1, P.quality.mode === 'max' ? 3 : 2);
 
@@ -38,7 +43,7 @@ function setLevel(v, now){
 // Cambio de modo en vivo (lo llama la UI, que después invoca layout() para reaplicar el tamaño)
 export function applyMode(){
   setPr(fullPr()); setQuality(false); // setQuality respeta 'max' (AO 24 + sombra 4K en preview)
-  probing = false; probeGap = PROBE_MIN; resetWindow(performance.now());
+  probing = false; probeGap = PROBE_MIN; cooldownUntil = 0; probeAt = 0; lastMove = 0; lastFps = Infinity; resetWindow(performance.now());
 }
 
 // Se llama una vez por cuadro desde el loop. moving = hay algo animándose (cámara, toma, carrusel, deriva, idle…)
@@ -60,6 +65,10 @@ export function qualityTick(now, moving){
   } else if (fps >= BAD_FPS) {
     if (probing) { probing = false; probeGap = PROBE_MIN; } // el paso extra aguantó → vuelve a la cadencia corta
     // Sondeo: si seguimos reducidos y nunca hay quietud, intenta subir un paso; si no aguanta, la regla de arriba lo baja
-    if (pr < full - 1e-3 && now >= probeAt) { setLevel(Math.min(full, pr + STEP), now); probing = true; probeAt = now + probeGap; }
+    if (pr < full - 1e-3 && now >= probeAt) {
+      const next = Math.min(full, pr + STEP), predicted = fps * (pr / next) ** 2; // fps ∝ 1/píxeles
+      if (predicted >= BAD_FPS * HEADROOM) { setLevel(next, now); probing = true; }
+      probeAt = now + probeGap; // si no hay holgura, se vuelve a evaluar más adelante (sin cambiar nada)
+    }
   }
 }

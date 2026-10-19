@@ -32,13 +32,9 @@ export function renderShots(){
 export { addShot } from '../three/camera.js';
 export function togglePres(){ presTL ? stopPresentation() : playPresentation(); }
 function setPlayBtn(on){
-  // Botón de cinemática del rail (claqueta, para no confundirlo con el play del carrusel): mismo estado (ON = tintado + icono de stop), sincronizado desde aquí
-  const r = $('#railPlay'); if (!r) return;
-  r.setAttribute('aria-pressed', String(!!on)); r.dataset.tip = on ? T.rail.stopTip : T.rail.playTip; r.setAttribute('aria-label', on ? T.rail.stopAria : T.rail.playAria);
-  r.innerHTML = `<i data-lucide="${on ? 'square' : 'clapperboard'}"></i>`; icons();
-  hooks.shotEditorPlay?.(!!on); // botón «Reproducir cinemática» de la card
+  // El Play/Stop vive en la card «Cinemática» (js/ui/shoteditor.js) y en la tecla Espacio; aquí solo se avisa del estado
+  hooks.shotEditorPlay?.(!!on);
 }
-$('#railPlay')?.addEventListener('click', togglePres);
 export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? T.rail.pauseCar : T.rail.resumeCar); icons(); }
 
 $('#scrPlay').onclick = () => { setCarPlaying(!carPlaying); setCarBtn(); scheduleCar(); };

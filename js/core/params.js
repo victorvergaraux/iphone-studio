@@ -14,6 +14,6 @@ export const P = {
   grade: { brightness:0, contrast:1, vignette:0.12, grain:0 },
   shots: { preset:'base', transition:0, hold:3, loop:true, randomHalf:false, halfCount:1 },
   quality:{ mode:'auto' },                 // auto | high | max (ver js/three/quality.js)
-  ui:    { dock:true },                    // pantallas (dock) visibles: control propio, independiente del panel
+  ui:    { dock:false },                   // pantallas (dock) visibles: oculto por defecto; control propio, independiente del panel
   exp:   { format:'9:16', kind:'png', long:1920, length:15, mbps:16, fps:30, pngScale:2, playShots:true, mode:'offline', container:'auto', transparent:false, shadowOpacity:0.45 },
 };

@@ -1,4 +1,4 @@
-import { run } from './helpers.mjs';
+import { run, openDock } from './helpers.mjs';
 
 // Card «Cinemática»: sin carpeta Shots en el panel avanzado, Move/Hold como sliders (por toma y globales) y «Cerrar» como icono X.
 await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, boot }) => {
@@ -56,24 +56,25 @@ await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, 
   ok(await page.evaluate(() => !!document.querySelector('#se-json')), 'botón Copiar JSON en la card');
 
   // ── La card nunca pisa el dock (con el botón nuevo es más alta: scroll interno si no cabe) ──
+  await openDock(page); await wait(300);
   const geo = await page.evaluate(() => ({ cardB: document.querySelector('#shotEditor').getBoundingClientRect().bottom, dockT: document.querySelector('.dock').getBoundingClientRect().top }));
   ok(geo.cardB <= geo.dockT + 1, `la card termina sobre el dock (${Math.round(geo.cardB)} ≤ ${Math.round(geo.dockT)})`);
 
   // ── Botón «Reproducir cinemática» dentro de la card (acento; ON = tinta con texto acento), sincronizado con el rail ──
   await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
-  const pb = async () => { await page.mouse.move(900, 500); await wait(150); return page.evaluate(() => { const b = document.querySelector('#se-play'), c = getComputedStyle(b), r = document.querySelector('#railPlay');
-    return { txt: b.textContent.trim(), on: b.classList.contains('on'), pressed: b.getAttribute('aria-pressed'), bg: c.backgroundColor, color: c.color, rail: r.getAttribute('aria-pressed'), icon: b.querySelector('svg')?.getAttribute('class') || '' }; }); }; // el ratón se aparta: no medir el color de hover
+  const pb = async () => { await page.mouse.move(900, 500); await wait(150); return page.evaluate(() => { const b = document.querySelector('#se-play'), c = getComputedStyle(b);
+    return { txt: b.textContent.trim(), on: b.classList.contains('on'), pressed: b.getAttribute('aria-pressed'), bg: c.backgroundColor, color: c.color, icon: b.querySelector('svg')?.getAttribute('class') || '' }; }); }; // el ratón se aparta: no medir el color de hover
   let p0 = await pb();
   eq([p0.txt, p0.on], ['Reproducir cinemática', false], 'botón de reproducción con su etiqueta, en reposo');
   eq(p0.bg, 'rgb(214, 255, 61)', 'reposo: fondo accent (#d6ff3d)');
   await page.click('#se-play'); await wait(500);
   let p1 = await pb();
-  eq([p1.txt, p1.on, p1.pressed, p1.rail], ['Detener cinemática', true, 'true', 'true'], 'al pulsar: «Detener cinemática», ON y el rail también');
+  eq([p1.txt, p1.on, p1.pressed], ['Detener cinemática', true, 'true'], 'al pulsar: «Detener cinemática» y ON');
   eq([p1.bg, p1.color], ['rgb(18, 18, 17)', 'rgb(214, 255, 61)'], 'reproduciendo: fondo tinta y texto accent');
   ok(/square/.test(p1.icon), 'icono de stop mientras reproduce');
-  await page.click('#railPlay'); await wait(500); // detener desde el rail → la card se entera
+  await ev('cam.stopPresentation();'); await wait(500); // detener por otra vía (tecla Espacio, fin de la presentación…) → la card se entera
   let p2 = await pb();
-  eq([p2.txt, p2.on, p2.rail], ['Reproducir cinemática', false, 'false'], 'detener desde el rail sincroniza el botón de la card');
+  eq([p2.txt, p2.on], ['Reproducir cinemática', false], 'detener desde fuera sincroniza el botón de la card');
   await page.click('#se-play'); await wait(400); await page.click('#se-play'); await wait(400);
   eq((await pb()).on, false, 'play y stop desde la card vuelven al reposo');
 
