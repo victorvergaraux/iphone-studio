@@ -1,4 +1,5 @@
 import { $, icons, reduced, toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { hooks } from '../core/hooks.js';
@@ -26,11 +27,11 @@ let lastSel = -2;
    Move y Hold son sliders (mismos rangos que tenía el panel: Move 0–8 s con 0 = corte seco, Hold 0–6 s). En «Toma» un slider sin
    override muestra el valor global (atenuado); al moverlo se fija el override y «Global» lo quita. El cambio se confirma al soltar. */
 let tab = 'shot';
-const fmtMove = v => (+v < 0.01 ? 'Corte' : secs(v));
+const fmtMove = v => (+v < 0.01 ? T.editor.corte : secs(v));
 const fields = {}, gfields = {};
-const tabsEl = mk('div', 'exp-seg se-tabs'); tabsEl.setAttribute('role', 'group'); tabsEl.setAttribute('aria-label', 'Ajustes de');
+const tabsEl = mk('div', 'exp-seg se-tabs'); tabsEl.setAttribute('role', 'group'); tabsEl.setAttribute('aria-label', T.editor.tabsAria);
 const tabBtns = {};
-for (const [k, l] of [['shot', 'Toma'], ['global', 'Global']]) { const b = mk('button', '', l); b.type = 'button'; b.onclick = () => { tab = k; syncDetail(); }; tabsEl.append(b); tabBtns[k] = b; }
+for (const [k, l] of [['shot', T.common.shot], ['global', T.common.global]]) { const b = mk('button', '', l); b.type = 'button'; b.onclick = () => { tab = k; syncDetail(); }; tabsEl.append(b); tabBtns[k] = b; }
 function sliderCtl(id, label, min, max, step, fmt, onInput, onChange){
   const wrap = mk('div', 'exp-sl'), rng = mk('input', 'exp-rng'), val = mk('output', 'se-val');
   rng.type = 'range'; rng.min = min; rng.max = max; rng.step = step; rng.id = id; rng.setAttribute('aria-label', label);
@@ -42,11 +43,11 @@ function row2(label, ctl, extra){
   const r = mk('div', 'se-row2' + (extra ? '' : ' nog')), l = mk('span', 'exp-lbl', label);
   r.append(l, ctl); if (extra) r.append(extra); return r;
 }
-const globBtn = (label, key) => { const g = mk('button', 'se-b se-g', 'Global'); g.type = 'button'; g.setAttribute('aria-label', `${label}: usar valor global`); g.onclick = () => { if (curShot >= 0) setShotTiming(curShot, { [key]:null }); }; return g; };
+const globBtn = (label, key) => { const g = mk('button', 'se-b se-g', T.common.global); g.type = 'button'; g.setAttribute('aria-label', T.editor.globalAria(label)); g.onclick = () => { if (curShot >= 0) setShotTiming(curShot, { [key]:null }); }; return g; };
 const switchCtl = (id, label, get, set) => {
   const b = mk('button', 'se-tgl'); b.type = 'button'; b.id = id; b.setAttribute('role', 'switch'); b.setAttribute('aria-label', label);
   b.innerHTML = '<span class="se-track"><i></i></span>';
-  b.onclick = () => { set(!get()); saveSoon(); record(`ajuste ${label}`, { key:`shots/${label}`, last:true }); refresh(); };
+  b.onclick = () => { set(!get()); saveSoon(); record(T.history.adjust(label), { key:`shots/${label}`, last:true }); refresh(); };
   return b;
 };
 {
@@ -62,15 +63,15 @@ const switchCtl = (id, label, get, set) => {
   // Global: ritmo de toda la cinemática (antes vivía en la carpeta Shots del panel avanzado)
   const gbody = mk('div', 'se-dbody'); gbody.id = 'seGBody';
   for (const [key, label, max, step] of [['transition', 'Move', 8, 0.05], ['hold', 'Hold', 6, 0.1]]) {
-    const c = sliderCtl(`se-g-${key}`, `${label} global`, 0, max, step, key === 'transition' ? fmtMove : secs, v => { P.shots[key] = v; },
-      v => { P.shots[key] = v; saveSoon(); record(`ajuste ${label}`, { key:`shots/${key}`, last:true }); refresh(); });
+    const c = sliderCtl(`se-g-${key}`, T.editor.sliderGlobalAria(label), 0, max, step, key === 'transition' ? fmtMove : secs, v => { P.shots[key] = v; },
+      v => { P.shots[key] = v; saveSoon(); record(T.history.adjust(label), { key:`shots/${key}`, last:true }); refresh(); });
     gfields[key] = c; gbody.append(row2(label, c.wrap));
   }
   gfields.loop = switchCtl('se-g-loop', 'Loop', () => P.shots.loop, v => { P.shots.loop = v; });
   gfields.random = switchCtl('se-g-random', 'Random', () => P.shots.randomHalf, v => { P.shots.randomHalf = v; });
   gbody.append(row2('Loop', gfields.loop));
-  const cnt = mk('div', 'exp-seg se-count2'); cnt.setAttribute('role', 'group'); cnt.setAttribute('aria-label', 'Tomas a la mitad');
-  gfields.count = [1, 2].map(n => { const b = mk('button', '', String(n)); b.type = 'button'; b.onclick = () => { P.shots.halfCount = n; saveSoon(); record('ajuste Count', { key:'shots/halfCount', last:true }); refresh(); }; cnt.append(b); return [b, n]; });
+  const cnt = mk('div', 'exp-seg se-count2'); cnt.setAttribute('role', 'group'); cnt.setAttribute('aria-label', T.editor.halfAria);
+  gfields.count = [1, 2].map(n => { const b = mk('button', '', String(n)); b.type = 'button'; b.onclick = () => { P.shots.halfCount = n; saveSoon(); record(T.history.adjust('Count'), { key:'shots/halfCount', last:true }); refresh(); }; cnt.append(b); return [b, n]; });
   const rr = mk('div', 'se-row2 nog'), rl = mk('span', 'exp-lbl', 'Random'), rc = mk('div', 'se-rand'); rc.append(gfields.random, cnt); rr.append(rl, rc);
   gbody.append(rr);
   const head = mk('div', 'se-dhead'); head.id = 'seDHead';
@@ -83,11 +84,11 @@ function syncDetail(){
   const s = shots[curShot], on = !!s, isShot = tab === 'shot';
   for (const [k, b] of Object.entries(tabBtns)) b.setAttribute('aria-pressed', String(k === tab));
   const dh = $('#seDHead'), db = $('#seDBody'), gb = $('#seGBody');
-  dh.textContent = isShot ? (on ? `T${pad2(curShot + 1)}${s.name ? ' · ' + s.name : ''}` : 'Elige una toma') : 'Toda la cinemática';
+  dh.textContent = isShot ? (on ? T.shot.tagName(curShot + 1, s.name) : T.editor.headPick) : T.editor.headAll;
   db.hidden = !isShot; gb.hidden = isShot;
   db.toggleAttribute('inert', !on); db.classList.toggle('dis', !on);
   // opciones del ease: «Global (X)» + las claves de CAM_EASES
-  const opts = [['', `Global · ${globalEaseKey()}`], ...Object.entries(CAM_EASES).map(([k, v]) => [v, k])]; // [valor, texto]
+  const opts = [['', T.editor.easeGlobal(globalEaseKey())], ...Object.entries(CAM_EASES).map(([k, v]) => [v, k])]; // [valor, texto]
   if (easeSel.options.length !== opts.length || opts[0][1] !== easeSel.options[0].textContent) {
     easeSel.innerHTML = ''; for (const [v, t] of opts) { const o = mk('option', '', t); o.value = v; easeSel.append(o); }
   }
@@ -111,25 +112,25 @@ async function copyJson(){
   const json = JSON.stringify(shots.map(({ p, t, fov, name, move, hold, ease }) => ({ p, t, fov, name, move, hold, ease })), null, 2); // JSON.stringify omite los undefined
   try { await navigator.clipboard.writeText(json); }
   catch { const ta = Object.assign(document.createElement('textarea'), { value:json }); document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-  toast(`${shots.length} toma(s) copiadas como JSON`);
+  toast(T.shot.jsonCopied(shots.length));
 }
 function act(id, label, fn, cls = ''){ const b = mk('button', 'se-b ' + cls, label); b.type = 'button'; b.id = `se-${id}`; b.onclick = fn; A[id] = b; return b; }
 acts.append(
-  act('save', 'Guardar cámara', () => addShot(), 'solid se-wide'),
-  act('upd', 'Actualizar', () => updateShot()),
-  act('dup', 'Duplicar', () => duplicateShot()),
-  act('ren', 'Renombrar', () => curShot >= 0 && startEdit(curShot)),
-  act('del', 'Eliminar', () => deleteShot()),
-  act('up', 'Subir', () => moveShot(curShot, curShot - 1)),
-  act('down', 'Bajar', () => moveShot(curShot, curShot + 1)),
-  act('json', 'Copiar JSON', copyJson, 'se-wide2'),
+  act('save', T.editor.saveCam, () => addShot(), 'solid se-wide'),
+  act('upd', T.editor.update, () => updateShot()),
+  act('dup', T.editor.duplicate, () => duplicateShot()),
+  act('ren', T.editor.rename, () => curShot >= 0 && startEdit(curShot)),
+  act('del', T.editor.remove, () => deleteShot()),
+  act('up', T.editor.up, () => moveShot(curShot, curShot - 1)),
+  act('down', T.editor.down, () => moveShot(curShot, curShot + 1)),
+  act('json', T.editor.copyJson, copyJson, 'se-wide2'),
 );
 { // Preset: selector (el mismo P.shots.preset del panel) + cargar
   const r = mk('div', 'se-preset'), sel = mk('select', 'se-sel'); sel.id = 'se-presetSel'; sel.setAttribute('aria-label', 'Preset');
   for (const [k, v] of Object.entries(SHOT_PRESETS)) { const o = mk('option', '', v.label); o.value = k; sel.append(o); }
   sel.onchange = () => { P.shots.preset = sel.value; saveSoon(); hooks.refreshPane?.(); };
   A.presetSel = sel;
-  r.append(sel, act('preset', 'Cargar', () => { sel.value = P.shots.preset; applyShotPreset(); })); acts.append(r);
+  r.append(sel, act('preset', T.common.load, () => { sel.value = P.shots.preset; applyShotPreset(); })); acts.append(r);
 }
 function syncActs(){
   const on = !!shots[curShot];
@@ -147,7 +148,7 @@ function summary(s){
 function rowEl(s, i){
   const r = mk('div', 'se-row'); r.setAttribute('role', 'listitem'); r.dataset.i = i;
   const grip = mk('button', 'se-grip'); grip.type = 'button'; grip.innerHTML = '<i data-lucide="grip-vertical"></i>';
-  grip.setAttribute('aria-label', `Mover toma ${pad2(i + 1)}: arrastra o usa flechas arriba y abajo`);
+  grip.setAttribute('aria-label', T.editor.gripAria(i + 1));
   grip.onpointerdown = e => dragStart(e, i, r);
   grip.onkeydown = e => {
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); const n = i + (e.key === 'ArrowUp' ? -1 : 1); if (moveShot(i, n)) list.querySelector(`.se-row[data-i="${n}"] .se-grip`)?.focus(); /* tras reconstruir la lista el foco vuelve al asa de la toma movida */ }
@@ -155,14 +156,14 @@ function rowEl(s, i){
   const ord = mk('span', 'se-ord', pad2(i + 1));
   let main;
   if (editing === i) {
-    main = mk('input', 'se-edit'); main.value = s.name || ''; main.placeholder = `T${pad2(i + 1)}`; main.maxLength = 40; main.setAttribute('aria-label', `Nombre de la toma ${pad2(i + 1)}`);
+    main = mk('input', 'se-edit'); main.value = s.name || ''; main.placeholder = `T${pad2(i + 1)}`; main.maxLength = 40; main.setAttribute('aria-label', T.editor.nameAria(i + 1));
     let done = false;
     const end = commit => { if (done) return; done = true; editing = -1; if (commit) renameShot(i, main.value); sig = ''; refresh(); };
     main.onkeydown = e => { e.stopPropagation(); if (e.key === 'Enter') end(true); else if (e.key === 'Escape') end(false); };
     main.onblur = () => end(true);
   } else {
     main = mk('button', 'se-main'); main.type = 'button';
-    main.append(mk('span', 'se-nm', s.name || `Toma ${pad2(i + 1)}`), mk('span', 'se-sum', summary(s)));
+    main.append(mk('span', 'se-nm', s.name || T.shot.defaultName(i + 1)), mk('span', 'se-sum', summary(s)));
     main.onclick = () => flyTo(i);
     main.ondblclick = () => startEdit(i);
   }
@@ -192,7 +193,7 @@ function refresh(){
   const s = JSON.stringify([editing, shots.map(x => [x.name, x.fov, x.move, x.hold, x.ease, P.shots.transition, P.shots.hold])]);
   if (s !== sig) {
     sig = s; list.innerHTML = '';
-    if (!shots.length) list.append(mk('p', 'se-empty', 'Sin tomas. Mueve la cámara y guarda la primera.'));
+    if (!shots.length) list.append(mk('p', 'se-empty', T.editor.empty));
     shots.forEach((x, i) => list.append(rowEl(x, i)));
     icons();
   }
@@ -203,7 +204,7 @@ hooks.shotEditorRefresh = () => { if (!card.hidden) refresh(); };
 
 /* ── Abrir / cerrar (misma mecánica que la card de exportación) ── */
 export const shotEditorOpen = () => !card.hidden;
-export function openShotEditor(){
+function openShotEditor(){
   if (onboardingOpen()) closeOnboarding({ mark:false }); // exclusión mutua: el onboarding no se marca como visto
   if (exportOpen()) closeExport();
   if (!card.hidden) return;
@@ -228,7 +229,7 @@ card.addEventListener('keydown', e => { if (e.target.closest('select') && e.key 
     const b = mk('button', 'se-ico'); b.type = 'button'; b.id = id; b.dataset.tip = tip; b.setAttribute('aria-label', label);
     b.innerHTML = `<i data-lucide="${icon}"></i>`; b.onclick = fn; return b;
   };
-  const bu = mkIco('seUndo', 'undo-2', 'Deshacer', 'Deshacer · Ctrl+Z', () => undo()), br = mkIco('seRedo', 'redo-2', 'Rehacer', 'Rehacer · Ctrl+Shift+Z', () => redo());
+  const bu = mkIco('seUndo', 'undo-2', T.common.undo, T.editor.undoTip, () => undo()), br = mkIco('seRedo', 'redo-2', T.common.redo, T.editor.redoTip, () => redo());
   $('#seClose').before(bu, br); icons();
   const sync = () => { bu.disabled = !canUndo(); br.disabled = !canRedo(); };
   subscribe(sync); sync();

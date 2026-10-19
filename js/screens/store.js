@@ -1,4 +1,5 @@
 import { toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { hooks } from '../core/hooks.js';
 import { items } from './carousel.js';
 
@@ -9,7 +10,7 @@ import { items } from './carousel.js';
    Las pantallas de ejemplo (example:true) nunca se guardan. Todo se escribe en UNA transacción (atómica):
    si falla por cuota, no queda un estado a medias. Sin IndexedDB (modo privado) la app sigue solo en memoria. */
 const DB_NAME = 'mockup-studio-screens', LIMIT = 300 * 1024 * 1024;   // aviso si el total supera ~300 MB
-export const EDIT_KEYS = ['fit', 'zoom', 'offX', 'offY', 'scroll', 'autoScroll'];
+const EDIT_KEYS = ['fit', 'zoom', 'offX', 'offY', 'scroll', 'autoScroll'];
 let dbP = null, failed = false, warnedFail = false, warnedSize = false, wiped = false, t = 0, chain = Promise.resolve();
 
 // Aviso de error: una sola vez por sesión, luego la app sigue en memoria.
@@ -17,7 +18,7 @@ let dbP = null, failed = false, warnedFail = false, warnedSize = false, wiped = 
 const isQuota = e => e?.name === 'QuotaExceededError' || e?.code === 22;
 function fail(err){
   const quota = isQuota(err); if (!quota) failed = true;
-  if (!warnedFail) { warnedFail = true; toast(quota ? 'Almacenamiento lleno: las pantallas nuevas solo duran esta sesión' : 'Sin almacenamiento local: las pantallas solo duran esta sesión', 5000); }
+  if (!warnedFail) { warnedFail = true; toast(quota ? T.store.quotaFull : T.store.noStorage, 5000); }
 }
 const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 const done = tx => new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = tx.onabort = () => rej(tx.error || new Error('tx')); });
@@ -31,7 +32,6 @@ function openDb(){
   });
   return dbP;
 }
-export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 export const pickEdit = it => Object.fromEntries(EDIT_KEYS.map(k => [k, it[k]]));
 // Aplica un encuadre guardado solo si cada clave conserva el tipo esperado (un registro corrupto no rompe la escena)
 export function applyEdit(it, st){ for (const k of EDIT_KEYS) if (st && typeof st[k] === typeof it[k]) it[k] = st[k]; }
@@ -52,7 +52,7 @@ async function doSync(){
   if (wiped || failed) return;
   const own = items.filter(i => !i.example && i.blob);
   const total = own.reduce((s, i) => s + i.blob.size, 0);
-  if (total > LIMIT && !warnedSize) { warnedSize = true; toast(`Pantallas pesadas (${(total / 1048576) | 0} MB): el guardado local puede fallar`); }
+  if (total > LIMIT && !warnedSize) { warnedSize = true; toast(T.store.heavy((total / 1048576) | 0)); }
   const fresh = own.filter(i => !i.stored);
   try {
     const db = await openDb(), tx = db.transaction(['blobs', 'meta'], 'readwrite'), bs = tx.objectStore('blobs');
@@ -73,7 +73,7 @@ function flushNow(){ if (wiped || failed) return; clearTimeout(t); chain = chain
 addEventListener('pagehide', flushNow);
 document.addEventListener('visibilitychange', () => { if (document.hidden) flushNow(); });
 /* Borra toda la base (botón Clear). Tras esto no se vuelve a escribir. */
-export function wipeScreens(){
+function wipeScreens(){
   wiped = true; clearTimeout(t);
   return chain.catch(() => {}).then(async () => {
     try { (await dbP)?.close(); } catch {}

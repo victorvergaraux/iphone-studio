@@ -1,6 +1,7 @@
 import { P } from '../core/params.js';
 import { $ } from '../core/utils.js';
 import { hideNotice, showNotice } from '../core/notice.js';
+import { T } from '../core/strings.js';
 import { canvas, composer, renderer } from './renderer.js';
 import { sun } from './scene.js';
 import { loadEnv } from './hdri.js';
@@ -28,8 +29,8 @@ function onLost(e){
   e.preventDefault(); glLost = true; clearTimeout(timer);
   try { stopPresentation(); } catch {}
   if (document.body.classList.contains('recording')) $('#recStop')?.click(); // cancela la grabación en curso: los cuadros ya no serían válidos
-  showNotice('Se perdió la GPU, recuperando…');
-  timer = setTimeout(() => { if (glLost) showNotice('No se recuperó la GPU.', { label:'Recargar', onClick:() => location.reload() }); }, 5000);
+  showNotice(T.gpu.lost);
+  timer = setTimeout(() => { if (glLost) showNotice(T.gpu.notRecovered, { label:T.gpu.reload, onClick:() => location.reload() }); }, 5000);
 }
 async function onRestored(){
   // three procesa su propio 'webglcontextrestored' antes (registrado primero): initGLContext ya dejó el estado limpio

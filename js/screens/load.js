@@ -1,4 +1,5 @@
 import { $, toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { screenMat } from '../three/screen.js';
 import { addItem, clearCar, cur, goTo, items, maxTex, setCur, setNextIdx, setSel } from './carousel.js';
@@ -16,15 +17,15 @@ function fitToMax(img){
 }
 export const loadFiles = list => loadBlobs(list);
 /* Límites de carga (exportados para poder bajarlos en tests). Más allá de esto el navegador se arrastra o falla. */
-export const LOAD_LIMITS = { maxBytes: 200 * 1024 * 1024, heavyPixels: 3840 * 2160, heavySeconds: 60, videoTimeout: 20000 };
+const LOAD_LIMITS = { maxBytes: 200 * 1024 * 1024, heavyPixels: 3840 * 2160, heavySeconds: 60, videoTimeout: 20000 };
 const mb = b => (b / 1048576) | 0;
 // Lee un video: devuelve { v } listo o { error }. Un códec no soportado dispara onerror o deja videoWidth/Height en 0.
 function readVideo(url){
   return new Promise(res => {
     const v = document.createElement('video'); Object.assign(v, { src:url, muted:true, loop:true, playsInline:true, crossOrigin:'anonymous' });
-    const t = setTimeout(() => res({ error:'no se pudo leer a tiempo (¿formato o códec no soportado?)' }), LOAD_LIMITS.videoTimeout);
-    v.onloadeddata = () => { clearTimeout(t); res(v.videoWidth && v.videoHeight ? { v } : { error:'códec de video no soportado (sin dimensiones)' }); };
-    v.onerror = () => { clearTimeout(t); res({ error:'códec de video no soportado' }); };
+    const t = setTimeout(() => res({ error:T.load.videoTimeout }), LOAD_LIMITS.videoTimeout);
+    v.onloadeddata = () => { clearTimeout(t); res(v.videoWidth && v.videoHeight ? { v } : { error:T.load.videoNoSize }); };
+    v.onerror = () => { clearTimeout(t); res({ error:T.load.videoCodec }); };
   });
 }
 /* Carga Blobs/Files como pantallas. states[i] (opcional) = { id, stored, name, fit, zoom, offX, offY, scroll, autoScroll } para restaurar
@@ -35,16 +36,16 @@ export async function loadBlobs(list, states = [], opts = {}){
   const skipped = [], heavy = [];   // [{ name, why }] · nombres de videos pesados
   const entries = [];
   for (const e of all) {
-    const name = e.f.name || e.st?.name || 'archivo';
-    if (!/^(image|video)\//.test(e.f.type)) skipped.push({ name, why:'tipo no soportado (usa imagen o video)' });
+    const name = e.f.name || e.st?.name || T.common.screen;
+    if (!/^(image|video)\//.test(e.f.type)) skipped.push({ name, why:T.load.badType });
     // lo ya guardado en IndexedDB (st.stored) se restaura siempre, sin tope de tamaño
-    else if (e.f.size > LOAD_LIMITS.maxBytes && !e.st?.stored) skipped.push({ name, why:`pesa ${mb(e.f.size)} MB (máx. ${mb(LOAD_LIMITS.maxBytes)} MB)` });
+    else if (e.f.size > LOAD_LIMITS.maxBytes && !e.st?.stored) skipped.push({ name, why:T.load.tooBig(mb(e.f.size), mb(LOAD_LIMITS.maxBytes)) });
     else entries.push(e);
   }
   const replace = opts.replace ?? P.car.replaceAll;
   let firstNew = items.length;
   for (const { f, st } of entries) {
-    const url = URL.createObjectURL(f), name = f.name || st?.name || 'pantalla', ex = { blob:f, id:st?.id, stored:!!st?.stored };
+    const url = URL.createObjectURL(f), name = f.name || st?.name || T.common.screenName, ex = { blob:f, id:st?.id, stored:!!st?.stored };
     let it = null;
     try {
       if (f.type.startsWith('video/')) {
@@ -58,9 +59,9 @@ export async function loadBlobs(list, states = [], opts = {}){
       } else {
         const img = new Image(); img.src = url;
         try { await img.decode(); it = addItem(fitToMax(img), name, { ...ex, thumb:url }); }
-        catch { skipped.push({ name, why:'imagen dañada o formato no soportado' }); }
+        catch { skipped.push({ name, why:T.load.badImage }); }
       }
-    } catch (err) { skipped.push({ name, why:err?.message || 'error al cargarla' }); }
+    } catch (err) { skipped.push({ name, why:err?.message || T.load.failed }); }
     if (it && st) applyEdit(it, st);   // encuadre guardado
     if (!it) URL.revokeObjectURL(url);
   }
@@ -72,10 +73,10 @@ export async function loadBlobs(list, states = [], opts = {}){
   if (n > 0) { setSel(firstNew); renderStrip(); refreshEdit(); goTo(firstNew); syncScreens(); }
   if (!opts.silent) {
     const parts = [];
-    if (n > 0) parts.push(`${n} ${n === 1 ? 'cargada' : 'cargadas'}`);
-    if (skipped.length) parts.push(`${skipped.length} ${skipped.length === 1 ? 'omitida' : 'omitidas'}: ${skipped.slice(0, 2).map(s => `${s.name} (${s.why})`).join('; ')}${skipped.length > 2 ? '…' : ''}`);
-    if (heavy.length) parts.push(`pesado para el navegador (>4K o >60 s): ${heavy.slice(0, 2).join(', ')}`);
-    if (parts.length) toast(parts.join(' · '), skipped.length || heavy.length ? 6000 : 2200);
+    if (n > 0) parts.push(T.load.loaded(n));
+    if (skipped.length) parts.push(T.load.skipped(skipped));
+    if (heavy.length) parts.push(T.load.heavy(heavy));
+    if (parts.length) toast(T.load.join(parts), skipped.length || heavy.length ? 6000 : 2200);
   }
   return n;
 }

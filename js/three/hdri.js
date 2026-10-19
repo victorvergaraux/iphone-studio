@@ -5,6 +5,7 @@ import { P } from '../core/params.js';
 import { pmrem, scene } from './renderer.js';
 import { bgColor, fog, keyRaw, placeKey, sun } from './scene.js';
 import { toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 
 /* ── Carga de HDRI: @pmndrs/assets publica cada EXR como módulo JS (data URI) → el CSP lo admite como script ── */
 export const HDRI = ['studio','warehouse','lobby','apartment','hall','lab','workshop','city','sunset','dawn','sunrise','night','park','forest','venice','bridge','esplanade','sky'];
@@ -28,8 +29,8 @@ export async function loadEnv(name){
   catch (err) {
     console.warn('HDRI', err);
     // Sin red (o CDN caída): si ya hay un entorno activo se conserva; solo si no hay ninguno se usa el estudio de respaldo
-    if (!envRT) { envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); scene.environment = envRT.texture; placeKey(); toast('No se pudo cargar el HDRI; uso un estudio de respaldo'); }
-    else toast(`No se pudo cargar «${name}» (¿sin conexión?); conservo el HDRI actual`);
+    if (!envRT) { envRT = pmrem.fromScene(new RoomEnvironment(), 0.04); scene.environment = envRT.texture; placeKey(); toast(T.gpu.hdriFallback); }
+    else toast(T.gpu.hdriKeep(name));
   }
 }
 /* Rotar un equirectangular en Y = desplazar columnas. Lo hacemos en CPU para que la luz derivada y el

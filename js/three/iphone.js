@@ -59,7 +59,7 @@ export const front = new THREE.Mesh(rrPlane(FPW, FPH, FPR), mBlack);
    por debajo: panel +0.0002 · pantalla +0.0004 · isla +0.0006 · vidrio +0.001.
    Con gaps tan finos el depth buffer solo no alcanza a distancia; se suma polygonOffset escalonado
    (sesgo de profundidad en GPU) para que cada capa gane siempre a la de abajo, sin z-fighting. */
-export const Z_FRONT = 0.0002, Z_SCREEN = 0.0004, Z_ISLAND = 0.0006, Z_GLASS = 0.001;
+const Z_FRONT = 0.0002; export const Z_SCREEN = 0.0004, Z_ISLAND = 0.0006, Z_GLASS = 0.001;
 export const depthBias = (m, n) => Object.assign(m, { polygonOffset:true, polygonOffsetFactor:-n, polygonOffsetUnits:-n * 4 });
 front.position.z = PD/2 + Z_FRONT; phone.add(front);
 export const back = new THREE.Mesh(rrPlane(FPW, FPH, FPR), new THREE.MeshPhysicalMaterial({ color:0x2b2b2d, roughness:0.55, metalness:0.1, envMapIntensity:0.6 }));

@@ -1,51 +1,33 @@
+/* Encuadre: panel de controles, guía de exportación, retícula, desplazamiento de vista (viewShift) y ciclo de export
+   (beginExport/endExport/fitCanvasCss), que necesitan la guía y `layout`. Aquí vive el listener de resize.
+   Importa session.js en una sola dirección (session.js no importa este módulo → sin ciclos ni TDZ).
+   Lo usan: three/loop.js (applyView, lastSx/lastSy, viewShift), export/*, ui/pane.js (setPanel/panelOpen), ui/exportcard.js, main.js. */
 import { $, DUR, EASE, reduced } from '../core/utils.js';
 import { P } from '../core/params.js';
-import { aoScale, camera, canvas, composer, gradePass, gtao, renderer, setAoScale } from './renderer.js';
-import { sun } from './scene.js';
+import { camera, canvas, composer, gradePass, renderer } from './renderer.js';
 import { accum } from './accum.js';
+import { FORMATS } from './formats.js';
+import { exporting, pr, recording, setExporting, setQuality, setRenderSize } from './session.js';
 
-/* ───────────────────────── Tamaño / formato ───────────────────────── */
-export const FORMATS = { 'Pantalla':0, '16:9':16/9, '4:5':4/5, '1:1':1, '9:16':9/16, '3:2':3/2 };
-// Pixel ratio del preview. Lo gobierna el selector Quality (js/three/quality.js): high/auto = min(dpr, 2), max = min(dpr, 3).
-export let pr = Math.min(devicePixelRatio, P.quality.mode === 'max' ? 3 : 2), recording = false, exporting = false;
-export const INFO = { salida:'' }; export let infoBinding = null;
-export const PANEL_W = 312, wide = () => innerWidth > 820, panelOpen = () => !document.body.classList.contains('panel-closed');
+const PANEL_W = 312, wide = () => innerWidth > 820; export const panelOpen = () => !document.body.classList.contains('panel-closed'); // PANEL_W y wide: solo se usan aquí
 document.body.classList.add('panel-closed'); // controles colapsados al inicio (el onboarding trae sus propias acciones)
 
 // El canvas ocupa TODA la pantalla. Para que el modelo quede centrado en el área libre
 // (sin panel, barra superior ni dock) desplazamos la imagen con camera.setViewOffset.
 export const viewShift = { x:0, y:0 };
 export let lastSx = null, lastSy = null, guide = null, gridRect = null;
-const uiH = sel => document.querySelector(sel)?.offsetHeight || 0;
 function targetShift(){
-  const pw = panelOpen() && wide() ? PANEL_W : 0;
   return { x: 0, y: 0 }; // canvas fullscreen fijo: abrir/cerrar paneles no mueve ni reencuadra la escena
 }
 // Rectángulo (px de pantalla) del área libre donde cabe el encuadre exportable
 function computeGuide(){
   const r = FORMATS[P.exp.format]; if (!r) return null; // "Pantalla" = sin recorte
-  const W = innerWidth, H = innerHeight, pw = panelOpen() && wide() ? PANEL_W : 0;
+  const W = innerWidth, H = innerHeight;
   // guía FIJA: se calcula sobre el viewport completo (márgenes de 48 px), no depende de paneles abiertos/cerrados
   const x0 = 48, x1 = W - 48, y0 = 48, y1 = H - 48;
   let fw = x1 - x0, fh = y1 - y0; if (fw < 80 || fh < 80) return null;
   let w = fw, h = fw / r; if (h > fh) { h = fh; w = fh * r; }
   return { x: x0 + (fw - w) / 2, y: y0 + (fh - h) / 2, w, h };
-}
-export function exportSize(){
-  const r = FORMATS[P.exp.format] || innerWidth / innerHeight, L = P.exp.long;
-  let w, h; if (r >= 1) { w = L; h = L / r; } else { h = L; w = L * r; }
-  return [Math.round(w / 2) * 2, Math.round(h / 2) * 2];
-}
-export function setRenderSize(w, h, ratio){
-  accum.reset(); // el tamaño cambia → el promedio acumulado deja de ser válido
-  renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
-  // composer.setPixelRatio ya redimensiona internamente (con el tamaño viejo): si el ancho/alto no cambian, ese único paso basta
-  // y evitamos realocar dos veces todos los targets (MSAA, GTAO, denoise). No se cachea el último tamaño: beginExport también
-  // toca el composer por fuera y un caché quedaría desfasado al volver del export.
-  composer.setPixelRatio(ratio);
-  if (composer._width !== w || composer._height !== h) composer.setSize(w, h);
-  gradePass.uniforms.uRes.value.set(w * ratio, h * ratio);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
 }
 export function applyView(){
   const W = innerWidth, H = innerHeight; camera.aspect = W / H;
@@ -53,18 +35,10 @@ export function applyView(){
   else camera.clearViewOffset();
   camera.updateProjectionMatrix(); lastSx = viewShift.x; lastSy = viewShift.y;
 }
+
 // Exportar = render del sub-rectángulo de la guía (lo que ves dentro de la guía es lo que sale)
-// Calidad: preview ligero (AO 50 %, sombra 2K) / export alto (AO 100 %, sombra 4K, más muestras)
-export function setQuality(high){
-  accum.reset(); // AO/sombra cambian → reinicia la acumulación progresiva
-  high = high || P.quality.mode === 'max'; // Max: el preview también usa AO 24 y sombra 4K (el export siempre pasa true)
-  setAoScale(1);
-  gtao.updateGtaoMaterial({ samples: high ? 24 : 12 });
-  const sz = high ? 4096 : 2048;
-  if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; }
-}
 export function beginExport(w, h, ratio){
-  exporting = true; setQuality(true); accum.reset(); // el export parte sin acumulación previa
+  setExporting(true); setQuality(true); accum.reset(); // el export parte sin acumulación previa
   renderer.setPixelRatio(ratio); renderer.setSize(w, h, false);
   composer.setPixelRatio(ratio); composer.setSize(w, h);
   gradePass.uniforms.uRes.value.set(w * ratio, h * ratio);
@@ -73,7 +47,7 @@ export function beginExport(w, h, ratio){
   else camera.clearViewOffset();
   camera.updateProjectionMatrix();
 }
-export function endExport(){ exporting = false; setQuality(false); accum.reset(); lastSx = null; layout(); } // reset: el pase de acumulación queda apagado
+export function endExport(){ setExporting(false); setQuality(false); accum.reset(); lastSx = null; layout(); } // reset: el pase de acumulación queda apagado
 export function fitCanvasCss(w, h){
   const W = innerWidth, H = innerHeight, m = guide ? 24 : 0;
   let cw = W - 2 * m, ch = cw * h / w; if (ch > H - 2 * m) { ch = H - 2 * m; cw = ch * w / h; }
@@ -100,16 +74,7 @@ export function layout(){
   if (Math.abs(t.x - viewShift.x) > 0.5 || Math.abs(t.y - viewShift.y) > 0.5) gsap.to(viewShift, { x:t.x, y:t.y, duration:reduced ? 0 : DUR, ease:EASE, overwrite:true });
   else { viewShift.x = t.x; viewShift.y = t.y; }
   lastSx = null;
-  const [ew, eh] = exportSize();
-  INFO.salida = `${ew}×${eh}`; infoBinding?.refresh();
 }
 addEventListener('resize', layout);
 const ro = new ResizeObserver(layout); ro.observe(document.querySelector('.dock'));
 export function setPanel(open){ document.body.classList.toggle('panel-closed', !open); layout(); }
-
-// Los importadores no pueden reasignar un binding: se expone un setter.
-export const setPr = v => { pr = v; };
-export const setRecording = v => { recording = v; };
-
-// Los importadores no pueden reasignar un binding: se expone un setter.
-export const setInfoBinding = v => { infoBinding = v; };

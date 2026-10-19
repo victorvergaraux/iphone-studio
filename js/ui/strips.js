@@ -1,4 +1,5 @@
 import { $, icons, toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { screenMat } from '../three/screen.js';
@@ -15,9 +16,9 @@ export function renderStrip(){
   items.forEach((it, i) => {
     const b = document.createElement('button');
     b.className = 'thumb' + (i === (nextIdx >= 0 ? nextIdx : cur) ? ' cur' : '') + (i === sel ? ' sel' : '');
-    b.setAttribute('aria-label', `Pantalla ${i + 1}: ${it.name}`);
+    b.setAttribute('aria-label', T.rail.screenAria(i + 1, it.name));
     if (it.thumb) { const im = document.createElement('img'); im.src = it.thumb; im.alt = ''; b.append(im); }
-    else { const v = document.createElement('span'); v.className = 'vid'; v.textContent = 'VIDEO'; b.append(v); }
+    else { const v = document.createElement('span'); v.className = 'vid'; v.textContent = T.rail.videoBadge; b.append(v); }
     b.onclick = () => { setSel(i); refreshEdit(); goTo(i); };
     el.append(b);
   });
@@ -28,16 +29,16 @@ export function renderShots(){
   saveSoon(); hooks.shotEditorRefresh?.();
 }
 // Operaciones de tomas: viven en camera.js (todas pasan por commitShots y avisan a hooks.onShotsChange); se reexportan aquí para el panel, el onboarding y los atajos
-export { addShot, updateShot, deleteShot, duplicateShot, moveShot, renameShot, setShotTiming } from '../three/camera.js';
+export { addShot } from '../three/camera.js';
 export function togglePres(){ presTL ? stopPresentation() : playPresentation(); }
-export function setPlayBtn(on){
+function setPlayBtn(on){
   // Botón de cinemática del rail (claqueta, para no confundirlo con el play del carrusel): mismo estado (ON = tintado + icono de stop), sincronizado desde aquí
   const r = $('#railPlay'); if (!r) return;
-  r.setAttribute('aria-pressed', String(!!on)); r.dataset.tip = on ? 'Detener · Espacio' : 'Cinemática · Espacio'; r.setAttribute('aria-label', on ? 'Detener cinemática' : 'Reproducir cinemática');
+  r.setAttribute('aria-pressed', String(!!on)); r.dataset.tip = on ? T.rail.stopTip : T.rail.playTip; r.setAttribute('aria-label', on ? T.rail.stopAria : T.rail.playAria);
   r.innerHTML = `<i data-lucide="${on ? 'square' : 'clapperboard'}"></i>`; icons();
 }
 $('#railPlay')?.addEventListener('click', togglePres);
-export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? 'Pausar carrusel' : 'Reanudar carrusel'); icons(); }
+export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? T.rail.pauseCar : T.rail.resumeCar); icons(); }
 
 $('#scrPlay').onclick = () => { setCarPlaying(!carPlaying); setCarBtn(); scheduleCar(); };
 $('#scrAdd').onclick = () => $('#file').click();
@@ -47,7 +48,7 @@ $('#scrReplace').onclick = () => { P.car.replaceAll = !P.car.replaceAll; syncRep
 syncReplace();
 $('#file').onchange = e => { loadFiles(e.target.files); e.target.value = ''; };
 $('#scrDel').onclick = () => {
-  if (items.length <= 1) return toast('Debe quedar al menos una pantalla');
+  if (items.length <= 1) return toast(T.rail.keepOne);
   const [it] = items.splice(sel, 1); it.tex.dispose(); if (it.isVideo) it.src.pause();
   clearCar(); setNextIdx(-1); screenMat.uniforms.uProgress.value = 0;
   setCur(Math.min(cur, items.length - 1)); setSel(Math.min(sel, items.length - 1));

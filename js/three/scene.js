@@ -75,7 +75,7 @@ function addSurfaceTex(m){
 // Solo piso y losa (mFloor) llevan la textura de manchas y el material físico; bloques y props son Standard (mate, sin mapas).
 export const mFloor = addSurfaceTex(mat(P.scene.floor, 1));
 // Piso/losa en modo Flat: mismo Standard que los objetos. Comparte el objeto Color con mFloor → los selectores de color no cambian.
-export const mFloorFlat = new THREE.MeshStandardMaterial({ roughness:1, metalness:0 }); mFloorFlat.color = mFloor.color;
+const mFloorFlat = new THREE.MeshStandardMaterial({ roughness:1, metalness:0 }); mFloorFlat.color = mFloor.color;
 export const mBlocks = new THREE.MeshStandardMaterial({ color:P.scene.blocks, roughness:0.92, metalness:0 }), mAccent = new THREE.MeshStandardMaterial({ color:P.scene.accent, roughness:0.7, metalness:0 });
 // Base roughness/metalness (P.scene.rough/metal) del piso y la losa, sobre la que actúan las manchas.
 export function applySurfaceTex(){
@@ -139,7 +139,7 @@ sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.015;
 sun.shadow.radius = P.shadow.size;
 sun.target.position.set(0, 0.5, 0);
 scene.add(sun, sun.target);
-export const keyDir = new THREE.Vector3(-0.6, 0.55, -0.55).normalize(), keyRaw = keyDir.clone();
+const keyDir = new THREE.Vector3(-0.6, 0.55, -0.55).normalize(); export const keyRaw = keyDir.clone();
 export function placeKey(){
   // limitar la elevación evita sombras infinitas cuando el foco del HDRI está cerca del horizonte
   const d = keyRaw.clone(), minY = Math.sin(THREE.MathUtils.degToRad(P.shadow.minElev));

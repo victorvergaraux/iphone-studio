@@ -94,7 +94,7 @@ export const composer = new EffectComposer(renderer, rt);
 composer.addPass(new RenderPass(scene, camera));
 /* GTAO (Ground-Truth Ambient Occlusion): oscurece pliegues y contactos. Con iluminación solo de entorno
    es lo que "asienta" los objetos. Preview a media resolución; export a resolución completa. */
-export let aoScale = 1; // AO a resolución completa también en preview: a 0.5 los bordes se escalonaban
+let aoScale = 1; // AO a resolución completa también en preview: a 0.5 los bordes se escalonaban
 export const gtao = new GTAOPass(scene, camera, 16, 16, undefined,
   { radius:P.shadow.aoRadius, distanceExponent:1, thickness:1, scale:1, samples:12, distanceFallOff:1 },
   { lumaPhi:10, depthPhi:2, normalPhi:3, radius:4, rings:2, samples:16 });

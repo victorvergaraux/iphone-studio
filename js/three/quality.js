@@ -1,9 +1,9 @@
 import { P } from '../core/params.js';
-import { exporting, pr, recording, setPr, setQuality, setRenderSize } from './format.js';
+import { exporting, pr, recording, setPr, setQuality, setRenderSize } from './session.js';
 
 /* ───────────────────────── Calidad (Auto / High / Max) ─────────────────────────
    high → pixel ratio = min(devicePixelRatio, 2), preview estándar (comportamiento histórico).
-   max  → pixel ratio nativo (tope 3) + AO 24 muestras + sombra 4096 también en preview (ver setQuality en format.js).
+   max  → pixel ratio nativo (tope 3) + AO 24 muestras + sombra 4096 también en preview (ver setQuality en session.js).
    auto → igual que High, pero SOLO baja el pixel ratio (AO, sombras y MSAA no se tocan) si el FPS medio cae bajo
           BAD_FPS mientras hay movimiento. Sube de nuevo al quedar quieto o al "sondear" tras un tiempo.
    El export (PNG/video) no pasa por aquí: usa su propia ruta beginExport/setQuality(true). */
@@ -15,7 +15,7 @@ const FLOOR = 1;         // piso del pixel ratio en auto
 const COOLDOWN = 1500;   // ms mínimos entre dos bajadas (histéresis: hay que medir una ventana fresca)
 const PROBE_MIN = 10000, PROBE_MAX = 60000; // sondeo para subir un paso si la escena nunca queda quieta (animación idle)
 
-export const fullPr = () => Math.min(devicePixelRatio || 1, P.quality.mode === 'max' ? 3 : 2);
+const fullPr = () => Math.min(devicePixelRatio || 1, P.quality.mode === 'max' ? 3 : 2);
 
 // Último FPS medio visto EN MOVIMIENTO (Infinity = aún sin medir). Lo usa la acumulación del preview (ver accumAllowed).
 let lastFps = Infinity;

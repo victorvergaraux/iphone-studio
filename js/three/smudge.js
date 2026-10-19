@@ -42,7 +42,7 @@ mGlass.onBeforeCompile = sh => {
       gl_FragColor.rgb += uSmudgeH * smudgeV * 0.08;`);
 };
 mGlass.customProgramCacheKey = () => 'glass-smudge';
-export const glass = new THREE.Mesh(rrPlane(FPW, FPH, FPR), mGlass);
+const glass = new THREE.Mesh(rrPlane(FPW, FPH, FPR), mGlass);
 glass.position.z = PD/2 + Z_GLASS; phone.add(glass); depthBias(mGlass, 3);
 glass.renderOrder = 2; // transparente aditivo sin depthWrite: se dibuja al final y nunca tapa la isla ni la pantalla
 

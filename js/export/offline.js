@@ -1,10 +1,13 @@
 import { $, toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { canvas } from '../three/renderer.js';
 import { resetCarousel, scheduleCar } from '../screens/carousel.js';
 import { playPresentation, presentationLength, shots, stopPresentation } from '../three/camera.js';
-import { beginExport, endExport, exportSize, fitCanvasCss, recording, setRecording } from '../three/format.js';
-import { clock, offline, renderFrame, setOffline } from '../three/loop.js';
+import { exportSize } from '../three/formats.js';
+import { beginExport, endExport, fitCanvasCss } from '../three/frame.js';
+import { recording, setRecording } from '../three/session.js';
+import { clock, renderFrame, setOffline } from '../three/loop.js';
 import { offer } from './export.js';
 import { beginVideoSync, endVideoSync, syncVideosTo } from './videosync.js';
 import { noRecordingNotice, realtimeMime, startRecordingRealtime } from './project.js';
@@ -13,7 +16,7 @@ import { noRecordingNotice, realtimeMime, startRecordingRealtime } from './proje
    Reloj virtual: GSAP deja de leer el reloj real (ticker.remove(updateRoot)) y avanzamos exactamente 1/fps por
    cuadro; renderFrame(t) recibe el mismo tiempo. Cada cuadro se dibuja, se codifica y se descarta: no importa si
    la GPU tarda 1 s por cuadro, el video sale fluido y sin cuadros perdidos. */
-export let cancelOffline = false;
+let cancelOffline = false;
 const fmtT = s => `${String(s / 60 | 0).padStart(2, '0')}:${String(s % 60 | 0).padStart(2, '0')}`;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -45,11 +48,11 @@ export async function startRecording(){
   if (recording) return;
   if (P.exp.mode === 'realtime') return startRecordingRealtime();
   // Sin WebCodecs o sin las librerías de muxing: se explica QUÉ falta y qué se usa en su lugar (tiempo real), o la alternativa PNG
-  const lacks = !('VideoEncoder' in window) ? 'Tu navegador no tiene VideoEncoder (WebCodecs; p. ej. Safari o Firefox antiguos)'
-    : (!window.Mp4Muxer || !window.WebMMuxer) ? 'No se cargaron las librerías de video MP4/WebM (¿sin conexión?)' : null;
+  const lacks = !('VideoEncoder' in window) ? T.video.noEncoder
+    : (!window.Mp4Muxer || !window.WebMMuxer) ? T.video.noMuxers : null;
   if (lacks) {
-    if (!realtimeMime()) return noRecordingNotice(`${lacks} y tampoco hay grabación en tiempo real`);
-    toast(`${lacks}: grabo en tiempo real`, 4500); return startRecordingRealtime();
+    if (!realtimeMime()) return noRecordingNotice(T.video.noRealtimeEither(lacks));
+    toast(T.video.realtimeFallback(lacks), 4500); return startRecordingRealtime();
   }
   const usePres = P.exp.playShots && shots.length > 0;
   const len = P.exp.length || (usePres ? presentationLength() : 15);
@@ -58,29 +61,29 @@ export async function startRecording(){
   for (const cand of videoCandidates(w, h, fps)) {
     const cfg = { codec:cand.codec, width:w, height:h, bitrate:P.exp.mbps * 1e6, framerate:fps, hardwareAcceleration:cand.hw,
                   ...(cand.mux === 'avc' ? { avc:{ format:'avc' } } : {}) };
-    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(`${cand.label}: no soportado (${cand.codec} ${w}x${h}@${fps})`); h264Skipped ||= cand.ext === 'mp4'; continue; } }
+    try { if (!(await VideoEncoder.isConfigSupported(cfg)).supported) { errors.push(T.video.unsupported(cand.label, cand.codec, w, h, fps)); h264Skipped ||= cand.ext === 'mp4'; continue; } }
     catch (e) { errors.push(`${cand.label}: ${e.message}`); h264Skipped ||= cand.ext === 'mp4'; continue; }
     attempted++;
-    if (cand.ext === 'webm' && h264Skipped) toast('Tu navegador no admite H.264 a esta resolución: exporto en WebM', 4500);
+    if (cand.ext === 'webm' && h264Skipped) toast(T.video.webmFallback, 4500);
     const res = await renderVideo(cand, cfg, { w, h, fps, len, usePres });
-    if (res.cancelled) return toast('Render cancelado');
+    if (res.cancelled) return toast(T.video.renderCancelled);
     if (res.blob) {
       if (errors.length) console.warn('Export de video, intentos fallidos:', errors);
       await offer(res.blob, `mockup-${P.exp.format.replace(':', 'x')}-${w}x${h}-${len.toFixed(0)}s-${fps}fps.${cand.ext}`);
       // Con descarga directa offer() ya avisa ("Archivo guardado"); si cayó al modal de vista previa, avisamos aquí
-      if (document.querySelector('.modal')) toast('Archivo listo');
+      if (document.querySelector('.modal')) toast(T.export.ready);
       return;
     }
     errors.push(`${cand.label}: ${res.error}`); console.warn('Video:', cand.label, res.error);
-    toast(`${cand.label} falló, reintentando con otro códec…`);
+    toast(T.video.codecRetry(cand.label));
   }
   console.error('Export de video falló:', errors);
   // Ningún códec admitido (ni se llegó a renderizar): lo más útil es grabar en tiempo real; si tampoco, ofrecer PNG
   if (!attempted) {
-    if (realtimeMime()) { toast('Ningún códec de video cuadro a cuadro es compatible aquí: grabo en tiempo real', 4500); return startRecordingRealtime(); }
-    return noRecordingNotice('Este navegador no admite ningún códec de video');
+    if (realtimeMime()) { toast(T.video.noCodecRealtime, 4500); return startRecordingRealtime(); }
+    return noRecordingNotice(T.video.noCodec);
   }
-  noRecordingNotice(`No se pudo exportar el video (${errors.at(-1) || 'error de codificación'})`);
+  noRecordingNotice(T.video.exportFailed(errors.at(-1) || T.video.encodeError));
 }
 
 /* Un intento completo de render cuadro a cuadro con un códec. Reloj virtual: GSAP deja de leer el reloj real
@@ -106,8 +109,8 @@ async function renderVideo(cand, cfg, { w, h, fps, len, usePres }){
   $('#rec').hidden = false; $('#prog').style.transform = 'scaleX(0)'; $('#prog').classList.add('on');
   // HUD: el botón del marcado se llama «Detener» (modo realtime); en offline cancela el render, así que se rotula «Cancelar»
   const stopBtn = $('#recStop'), stopLabel = stopBtn.textContent, tStart = performance.now();
-  stopBtn.textContent = 'Cancelar';
-  const onCancel = () => { stopBtn.textContent = 'Cancelando…'; }; // la lógica de cancelación sigue en project.js
+  stopBtn.textContent = T.common.cancel;
+  const onCancel = () => { stopBtn.textContent = T.video.stopCancelling; }; // la lógica de cancelación sigue en project.js
   stopBtn.addEventListener('click', onCancel);
   try {
     for (let i = 0; i < total && !cancelOffline && !encErr; i++) {
@@ -121,7 +124,7 @@ async function renderVideo(cand, cfg, { w, h, fps, len, usePres }){
       frame.close();
       // Porcentaje · cuadros · ETA = tiempo transcurrido / cuadros hechos × cuadros restantes
       const done = i + 1, eta = (performance.now() - tStart) / 1000 / done * (total - done);
-      $('#recTime').textContent = `${cand.ext.toUpperCase()} · ${Math.floor(done / total * 100)}% · ${done}/${total} cuadros · faltan ${fmtT(Math.ceil(eta))}`;
+      $('#recTime').textContent = T.video.progress(cand.ext.toUpperCase(), Math.floor(done / total * 100), done, total, fmtT(Math.ceil(eta)));
       $('#prog').style.transform = `scaleX(${(i + 1) / total})`;
       while (encoder.encodeQueueSize > 6 && !encErr) await sleep(4);
       await sleep(0);

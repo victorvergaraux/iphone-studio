@@ -4,6 +4,7 @@ import { camera, controls } from './renderer.js';
 import { SLAB_TOP } from './scene.js';
 import { phone } from './iphone.js';
 import { toast } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { hooks } from '../core/hooks.js';
 
 /* ───────────────────────── Tomas de cámara ───────────────────────── */
@@ -65,7 +66,7 @@ function buildPresetShots(key){
 export function defaultShots(){ shots = buildPresetShots(P.shots.preset); }
 export function applyShotPreset(){
   commitShots('preset', buildPresetShots(P.shots.preset), -1, { stop:true }); flyTo(0);
-  toast(`Preset ${SHOT_PRESETS[P.shots.preset]?.label || ''} cargado`);
+  toast(T.shot.presetLoaded(SHOT_PRESETS[P.shots.preset]?.label || ''));
 }
 export let curShot = -1, presTL = null;
 
@@ -85,25 +86,25 @@ const pad2 = n => String(n).padStart(2, '0');
 const META = ['name', 'move', 'hold', 'ease']; // campos de la toma que no son cámara
 const pickMeta = s => Object.fromEntries(META.filter(k => s[k] !== undefined).map(k => [k, s[k]]));
 const okIdx = i => Number.isInteger(i) && i >= 0 && i < shots.length;
-const need = () => { toast('Elige una toma de la lista primero'); return false; };
+const need = () => { toast(T.shot.pickFirst); return false; };
 
 // Guarda la cámara actual como toma nueva al final y la deja seleccionada
-export function addShot(){ commitShots('add', [...shots, snap()], shots.length); toast(`Toma T${pad2(shots.length)} guardada`); return true; }
+export function addShot(){ commitShots('add', [...shots, snap()], shots.length); toast(T.shot.saved(shots.length)); return true; }
 // Reemplaza la cámara de la toma i con la actual (conserva nombre, move, hold y ease)
 export function updateShot(i = curShot){
   if (!okIdx(i)) return need();
   const next = shots.slice(); next[i] = { ...snap(), ...pickMeta(shots[i]) };
-  commitShots('update', next, i); toast(`Toma T${pad2(i + 1)} actualizada`); return true;
+  commitShots('update', next, i); toast(T.shot.updated(i + 1)); return true;
 }
 export function deleteShot(i = curShot){
   if (!okIdx(i)) return need();
-  commitShots('delete', shots.filter((_, k) => k !== i), -1, { stop:true }); toast(`Toma T${pad2(i + 1)} eliminada`); return true;
+  commitShots('delete', shots.filter((_, k) => k !== i), -1, { stop:true }); toast(T.shot.deleted(i + 1)); return true;
 }
 export function duplicateShot(i = curShot){
   if (!okIdx(i)) return need();
   const src = shots[i], copy = { ...src, p:[...src.p], t:[...src.t] }; if (src.name) copy.name = `${src.name} 2`;
   const next = shots.slice(); next.splice(i + 1, 0, copy);
-  commitShots('duplicate', next, i + 1, { stop:true }); toast(`Toma T${pad2(i + 1)} duplicada`); return true;
+  commitShots('duplicate', next, i + 1, { stop:true }); toast(T.shot.duplicated(i + 1)); return true;
 }
 // Mueve la toma `from` a la posición `to` (la selección sigue a la toma que se mueve o se desplaza con ella)
 export function moveShot(from, to){
@@ -161,7 +162,7 @@ const cineEase = t => { // bezier 1D sobre t con resolución por bisección (exa
 // key = valor de CAM_EASES (p. ej. 'expo.inOut' o 'cine'); cada toma puede traer el suyo (shot.ease), si no, el global P.cam.ease
 const camEase = (key = P.cam.ease) => key === 'cine' ? cineEase : key;
 // Acepta la CLAVE ('Expo') o el VALOR ('expo.inOut') de CAM_EASES y devuelve siempre el valor; undefined si no existe
-export function validEase(x){
+function validEase(x){
   if (typeof x !== 'string') return undefined;
   if (Object.prototype.hasOwnProperty.call(CAM_EASES, x)) return CAM_EASES[x];
   return Object.values(CAM_EASES).includes(x) ? x : undefined;
@@ -249,7 +250,7 @@ function buildPresentation(loop){
   return tl;
 }
 export function playPresentation(loop = P.shots.loop){
-  if (shots.length < 1) return toast('Guarda al menos una toma');
+  if (shots.length < 1) return toast(T.shot.emptyCinematic);
   stopPresentation(); flyTween?.kill(); flyTween = null; controls.enabled = false; camTweening = true;
   presTL = buildPresentation(loop); hooks.setPlayBtn(true);
   document.body.classList.add('pres-playing'); // oculta la retícula mientras corre la presentación

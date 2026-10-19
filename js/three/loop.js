@@ -9,7 +9,8 @@ import { accum } from './accum.js';
 import { sun } from './scene.js';
 import { camTweening } from './camera.js';
 import { hooks } from '../core/hooks.js';
-import { applyView, exporting, lastSx, lastSy, recording, viewShift } from './format.js';
+import { applyView, lastSx, lastSy, viewShift } from './frame.js';
+import { exporting, recording } from './session.js';
 
 /* ───────────────────────── Render loop ───────────────────────── */
 export const clock = new THREE.Clock();

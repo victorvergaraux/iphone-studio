@@ -16,6 +16,7 @@ export function showNotice(msg, action, ms = 0){
   const n = ensure(); n.textContent = ''; clearTimeout(hideT); if (ms) hideT = setTimeout(hideNotice, ms);
   const s = document.createElement('span'); s.textContent = msg; n.append(s);
   if (action) { const b = document.createElement('button'); b.type = 'button'; b.textContent = action.label; b.onclick = action.onClick; n.append(b); }
-  requestAnimationFrame(() => n.classList.add('on'));
+  document.body.classList.add('has-notice'); // el toast baja debajo del aviso (css/main.css)
+  void n.offsetWidth; n.classList.add('on'); // reflow forzado: la transición de opacidad arranca sin esperar a rAF
 }
-export function hideNotice(){ clearTimeout(hideT); if (el) el.classList.remove('on'); }
+export function hideNotice(){ clearTimeout(hideT); document.body.classList.remove('has-notice'); if (el) el.classList.remove('on'); }

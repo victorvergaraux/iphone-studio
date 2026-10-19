@@ -1,4 +1,5 @@
 import { toast } from './utils.js';
+import { T } from './strings.js';
 
 /* ── PWA: registro del service worker ──
    Solo en producción (no localhost) o con ?sw=1 → en desarrollo normal no se cachea nada; si quedó un SW de una
@@ -8,7 +9,7 @@ const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]'
 const forced = new URLSearchParams(location.search).has('sw');
 
 function offerUpdate(reg){
-  toast('Hay una versión nueva — recargar');
+  toast(T.pwa.update);
   const t = document.getElementById('toast'); if (!t) return;
   clearTimeout(toast.t); // el toast normal se apaga a los 2 s: este se queda y es clicable
   t.style.pointerEvents = 'auto'; t.style.cursor = 'pointer';

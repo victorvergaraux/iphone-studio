@@ -1,8 +1,10 @@
 import { $, DUR, EASE, reduced } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { catcher } from '../three/scene.js';
-import { FORMATS, exportSize, layout } from '../three/format.js';
+import { FORMATS, exportSize } from '../three/formats.js';
+import { layout } from '../three/frame.js';
 import { presentationLength, shots } from '../three/camera.js';
 import { snapshot } from '../export/export.js';
 import { startRecording } from '../export/offline.js';
@@ -41,7 +43,7 @@ function row(parent, label, control, cls = ''){
 // Cambia un valor de P.exp, lo persiste y ejecuta efectos extra
 const setP = (key, after) => v => { P.exp[key] = v; saveSoon(); after?.(); info(); };
 const seg1 = (key, opts, after) => seg(opts, () => P.exp[key], setP(key, after));
-const YN = [['No', false], ['Sí', true]];
+const YN = [[T.exportCard.no, false], [T.exportCard.yes, true]];
 
 /* ── Lectura de salida ── */
 const size = $('#expSize');
@@ -59,37 +61,37 @@ const noteVid = mkNote(), noteFmt = mkNote();
 const videoLen = () => P.exp.length || (P.exp.playShots && shots.length > 0 ? presentationLength() : 15);
 function info(){
   const len = videoLen(), mb = P.exp.mbps * len / 8, frames = Math.round(len * P.exp.fps);
-  noteVid.textContent = `≈ ${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB · ${frames} cuadros`;
+  noteVid.textContent = T.exportCard.videoNote(mb < 10 ? mb.toFixed(1) : Math.round(mb), frames);
   noteVid.style.visibility = P.exp.kind === 'video' ? 'visible' : 'hidden';
-  noteFmt.textContent = 'Pantalla: depende de tu ventana';
+  noteFmt.textContent = T.exportCard.screenNote;
   noteFmt.style.visibility = P.exp.format === 'Pantalla' ? 'visible' : 'hidden';
 }
 
 /* ── Esencial ── */
 const main = $('#expMain');
-row(main, 'Formato', seg1('format', Object.keys(FORMATS).map(k => [k, k]), onGeom), 'wide');
-row(main, 'Tamaño', seg1('long', [['HD', 1280], ['FHD', 1920], ['QHD', 2560], ['4K', 3840]], onGeom));
-row(main, 'Tipo', seg([['PNG', 'png'], ['Video', 'video']], () => P.exp.kind, v => setKind(v)));
-const durRow = row(main, 'Duración', seg1('length', [['15 s', 15], ['30 s', 30], ['Shots', 0]]));
+row(main, T.common.format, seg1('format', Object.keys(FORMATS).map(k => [k, k]), onGeom), 'wide');
+row(main, T.exportCard.size, seg1('long', [['HD', 1280], ['FHD', 1920], ['QHD', 2560], ['4K', 3840]], onGeom));
+row(main, T.exportCard.kind, seg([['PNG', 'png'], ['Video', 'video']], () => P.exp.kind, v => setKind(v)));
+const durRow = row(main, T.exportCard.duration, seg1('length', [['15 s', 15], ['30 s', 30], ['Shots', 0]]));
 
 /* ── Más ajustes ── */
 const vid = $('#expVid'), png = $('#expPng');
 row(vid, 'FPS', seg1('fps', [['30', 30], ['60', 60]]));
 row(vid, 'Mbps', seg1('mbps', [['6', 6], ['16', 16], ['40', 40]]));
 row(vid, 'Codec', seg1('container', [['Auto', 'auto'], ['MP4', 'mp4'], ['WebM', 'webm']]));
-row(vid, 'Modo', seg1('mode', [['Offline', 'offline'], ['Realtime', 'realtime']]));
+row(vid, T.exportCard.mode, seg1('mode', [['Offline', 'offline'], ['Realtime', 'realtime']]));
 row(vid, 'Shots', seg1('playShots', YN));
-row(png, 'Escala', seg1('pngScale', [['1×', 1], ['2×', 2]]));
+row(png, T.exportCard.scale, seg1('pngScale', [['1×', 1], ['2×', 2]]));
 row(png, 'Alpha', seg1('transparent', YN, () => syncShadow()));
 // Sombra: slider 0–1; actualiza el catcher en vivo como hacía el panel
-const rng = document.createElement('input'); rng.type = 'range'; rng.min = 0; rng.max = 1; rng.step = .01; rng.className = 'exp-rng'; rng.setAttribute('aria-label', 'Sombra');
+const rng = document.createElement('input'); rng.type = 'range'; rng.min = 0; rng.max = 1; rng.step = .01; rng.className = 'exp-rng'; rng.setAttribute('aria-label', T.common.shadow);
 const rv = document.createElement('output'); rv.className = 'exp-val';
 const shade = () => { rng.value = P.exp.shadowOpacity; rv.textContent = Math.round(P.exp.shadowOpacity * 100) + '%'; };
 rng.oninput = () => { P.exp.shadowOpacity = +rng.value; catcher.material.opacity = P.exp.shadowOpacity; shade(); saveSoon(); };
 const sw = document.createElement('div'); sw.className = 'exp-sl'; sw.append(rng, rv);
-const shRow = row(png, 'Sombra', sw);
+const shRow = row(png, T.common.shadow, sw);
 // La sombra solo se usa en el PNG transparente (plano que recibe sombra): sin Alpha el control queda deshabilitado
-function syncShadow(){ const on = !!P.exp.transparent; shRow.classList.toggle('dis', !on); rng.disabled = !on; shRow.title = on ? '' : 'Solo aplica con Alpha activo'; }
+function syncShadow(){ const on = !!P.exp.transparent; shRow.classList.toggle('dis', !on); rng.disabled = !on; shRow.title = on ? '' : T.exportCard.shadowNeedsAlpha; }
 syncs.push(shade, syncShadow); shade(); syncShadow();
 
 /* ── Tipo PNG | Video: cambia botón, fila de duración y panel de «Más» sin mover la card ── */
@@ -99,7 +101,7 @@ function setKind(k, instant){
   const prev = shown; shown = k;
   if (P.exp.kind !== k) { P.exp.kind = k; saveSoon(); } // persiste el tipo
   syncs.forEach(f => f()); info();
-  go.textContent = k === 'png' ? 'Capturar PNG' : 'Renderizar video';
+  go.textContent = k === 'png' ? T.exportCard.capturePng : T.exportCard.renderVideo;
   durRow.classList.toggle('off', k === 'png'); // reserva su alto: solo se oculta
   durRow.toggleAttribute('inert', k === 'png');
   for (const [name, el] of Object.entries(panes)) {

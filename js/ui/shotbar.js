@@ -1,4 +1,5 @@
 import { $ } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { presTL, shots } from '../three/camera.js';
 
 /* ───────────────────────── Línea de tiempo de la cinemática ─────────────────────────
@@ -17,7 +18,7 @@ function build(t){
     const seg = document.createElement('div'); seg.className = 'sb-seg'; seg.style.flexGrow = Math.max(0.05, s.end - s.start);
     const name = shots[i]?.name;
     seg.innerHTML = '<i class="sb-dot"></i><span class="sb-line"><b></b></span>';
-    seg.title = `T${pad2(i + 1)}${name ? ' · ' + name : ''}`;
+    seg.title = T.shot.tagName(i + 1, name);
     track.append(seg); segEls.push(seg); fills.push(seg.querySelector('b'));
   });
   const end = document.createElement('i'); end.className = 'sb-dot end'; track.append(end); // cierre de la última toma

@@ -1,6 +1,7 @@
 import { P } from './params.js';
 import { hooks } from './hooks.js';
 import { toast } from './utils.js';
+import { T } from './strings.js';
 import { saveSoon } from './persist.js';
 import { camera } from '../three/renderer.js';
 import { curShot, setCurShot, setShots, shots, stopPresentation } from '../three/camera.js';
@@ -17,9 +18,9 @@ import { curShot, setCurShot, setShots, shots, stopPresentation } from '../three
    valores UI temporales, edición de encuadre por pantalla). Importar un proyecto o «Clear» reinician el historial (reset).
    Cambios continuos (arrastrar slider/color): se fusionan en UNA entrada si son del mismo control y llegan con <400 ms de
    diferencia (o hasta que Tweakpane marca e.last). Los refrescos internos (syncing) nunca llegan aquí. */
-export const MAX = 100, MERGE_MS = 400;
+const MAX = 100, MERGE_MS = 400;
 const GROUPS = ['scene', 'env', 'shadow', 'phone', 'metal', 'anim', 'cam', 'car', 'grade', 'shots'];
-const REASONS = { add:'añadir toma', update:'actualizar toma', rename:'renombrar toma', timing:'tiempos de toma', duplicate:'duplicar toma', delete:'eliminar toma', move:'mover toma', preset:'cargar preset' };
+const REASONS = T.history.reasons;
 
 let states = [], labels = [], keys = [], i = -1;
 let lastKey = null, lastT = 0, restoring = 0, queue = Promise.resolve();
@@ -36,7 +37,7 @@ export const canRedo = () => i >= 0 && i < states.length - 1;
 export const info = () => ({ length:states.length, index:i, labels:labels.slice(), undo:canUndo() ? labels[i] : null, redo:canRedo() ? labels[i + 1] : null });
 
 /* Reinicia el historial con el estado actual como línea base (importar proyecto, Clear) */
-export function reset(){ states = [snap()]; labels = ['inicio']; keys = [null]; i = 0; lastKey = null; lastT = 0; notify(); }
+export function reset(){ states = [snap()]; labels = [T.history.base]; keys = [null]; i = 0; lastKey = null; lastT = 0; notify(); }
 
 /* Registra el estado ACTUAL como nueva entrada. key identifica el control (para fusionar cambios continuos); last=false = Tweakpane sigue arrastrando */
 export function record(reason, { key = null, last = true } = {}){
@@ -70,14 +71,14 @@ function go(to, k, verb){
   }
   if (pChanged) for (const g of GROUPS) Object.assign(P[g], tgt.P[g]);
   if (fovEntry) { camera.fov = P.cam.fov; camera.updateProjectionMatrix(); }
-  toast(`${verb}: ${label}`);
+  toast(T.history.toast(verb, label));
   notify();
   // Aplicación pesada (escena + refresco del panel) en serie; mientras tanto no se registran cambios
   queue = queue.then(async () => { try { if (pChanged) await hooks.applySettings?.(); } catch (e) { console.warn(e); } finally { restoring--; saveSoon(); hooks.refreshPane?.(); notify(); } });
   return queue;
 }
-export function undo(){ return canUndo() ? go(i - 1, i, 'Deshacer') : Promise.resolve(); }
-export function redo(){ return canRedo() ? go(i + 1, i + 1, 'Rehacer') : Promise.resolve(); }
+export function undo(){ return canUndo() ? go(i - 1, i, T.common.undo) : Promise.resolve(); }
+export function redo(){ return canRedo() ? go(i + 1, i + 1, T.common.redo) : Promise.resolve(); }
 
 /* Tomas: engancha (sin pisar) hooks.onShotsChange */
 { const prev = hooks.onShotsChange; hooks.onShotsChange = r => { prev?.(r); record(REASONS[r] || r); }; }

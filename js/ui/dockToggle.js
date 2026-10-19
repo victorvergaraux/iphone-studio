@@ -12,7 +12,7 @@ function apply(){
   btn?.setAttribute('aria-pressed', String(!!P.ui.dock));
 }
 
-export function setDock(v){ P.ui.dock = !!v; apply(); saveSoon(); }
+function setDock(v){ P.ui.dock = !!v; apply(); saveSoon(); }
 export function toggleDock(){ setDock(!P.ui.dock); }
 
 btn?.addEventListener('click', toggleDock);

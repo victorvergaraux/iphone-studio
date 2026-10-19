@@ -1,7 +1,7 @@
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { hooks } from '../core/hooks.js';
-import { layout } from '../three/format.js';
+import { layout } from '../three/frame.js';
 import { applyMode } from '../three/quality.js';
 import { pane } from './pane.js';
 

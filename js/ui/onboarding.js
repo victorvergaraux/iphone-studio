@@ -1,8 +1,10 @@
 import { $, icons, reduced } from '../core/utils.js';
+import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { applyShotPreset } from '../three/camera.js';
-import { exportSize, layout } from '../three/format.js';
+import { exportSize } from '../three/formats.js';
+import { layout } from '../three/frame.js';
 import { pane } from './pane.js';
 import { closeExport, exportOpen, openExport } from './exportcard.js';
 import { addShot, togglePres } from './strips.js';
@@ -12,17 +14,17 @@ import { closeShotEditor, shotEditorOpen } from './shoteditor.js';
    Tarjeta flotante de 3 pasos (Imágenes → Exportar → Cinemática). Los controles arrancan colapsados, así que
    cada paso trae sus propias acciones: no hace falta abrir el panel hasta «Avanzado». Manual (Atrás / Siguiente).
    El flag vive en su propia clave de localStorage (no en P): no se exporta con el proyecto JSON. */
-export const ONB_KEY = 'mockup-studio:onboarded';
+const ONB_KEY = 'mockup-studio:onboarded';
 const seen = () => { try { return !!localStorage.getItem(ONB_KEY); } catch { return false; } };
 const mark = () => { try { localStorage.setItem(ONB_KEY, '1'); } catch {} };
 
 const STEPS = [
-  { title:'Imágenes', text:'Arrastra imágenes o video sobre la escena. También puedes pegarlos con Ctrl+V.',
-    acts:[['Cargar', () => $('#file').click(), true]] },
-  { title:'Exportar', text:'Elige el formato y descarga un PNG o un video con la composición actual.', fmt:true,
-    acts:[['Abrir exportar', () => { mark(); openExport(); }, true], ['Avanzado', () => { pane.expanded = true; }]] },
-  { title:'Cinemática', sub:'Modo avanzado', text:'Mueve la cámara con el mouse y guarda cada ángulo para armar tu cinemática. O parte de un preset.',
-    acts:[['Guardar · S', addShot, true], ['Preset', applyShotPreset], ['Reproducir', togglePres]] },
+  { ...T.onboarding.steps[0],
+    acts:[[T.common.load, () => $('#file').click(), true]] },
+  { ...T.onboarding.steps[1], fmt:true,
+    acts:[[T.onboarding.openExport, () => { mark(); openExport(); }, true], [T.onboarding.advanced, () => { pane.expanded = true; }]] },
+  { ...T.onboarding.steps[2],
+    acts:[[T.onboarding.saveS, addShot, true], ['Preset', applyShotPreset], [T.onboarding.play, togglePres]] },
 ];
 let i = 0;
 
@@ -31,11 +33,11 @@ let i = 0;
 const ONB_FORMATS = ['9:16', '4:5', '1:1', '16:9', 'Pantalla'];
 function fmtBlock(){
   const wrap = document.createElement('div'); wrap.className = 'onb-fmt'; wrap.id = 'onbFmt';
-  const segEl = document.createElement('div'); segEl.className = 'exp-seg'; segEl.setAttribute('role', 'group'); segEl.setAttribute('aria-label', 'Formato');
+  const segEl = document.createElement('div'); segEl.className = 'exp-seg'; segEl.setAttribute('role', 'group'); segEl.setAttribute('aria-label', T.common.format);
   const out = document.createElement('span'); out.className = 'onb-fmt-out';
   const sync = () => {
     for (const b of segEl.children) b.setAttribute('aria-pressed', String(b.dataset.v === P.exp.format));
-    const [w, h] = exportSize(); out.textContent = `Salida ${w}×${h} px` + (P.exp.format === 'Pantalla' ? ' · depende de tu ventana' : '');
+    const [w, h] = exportSize(); out.textContent = T.onboarding.output(w, h, P.exp.format === 'Pantalla');
   };
   for (const f of ONB_FORMATS) {
     const b = document.createElement('button'); b.type = 'button'; b.textContent = f; b.dataset.v = f;
@@ -60,7 +62,7 @@ function render(){
   }
   document.querySelectorAll('.onb-bars i').forEach((el, k) => el.classList.toggle('on', k <= i));
   $('#onbBack').disabled = i === 0;
-  $('#onbNext').textContent = i === STEPS.length - 1 ? 'Listo' : 'Siguiente';
+  $('#onbNext').textContent = i === STEPS.length - 1 ? T.onboarding.done : T.onboarding.next;
 }
 
 /* Solo opacidad (sin desplazamiento en Y): entra con power2.out (arranca rápido y se asienta), sale con power2.in.
@@ -73,7 +75,7 @@ function go(n){
 }
 
 export const onboardingOpen = () => !card.hidden;
-export function openOnboarding(){
+function openOnboarding(){
   if (exportOpen()) closeExport(); // exclusión mutua con la card de exportación (ocupan el mismo sitio)
   if (shotEditorOpen()) closeShotEditor(); // ...y con el editor de cinemática
   i = 0; render(); gsap.set(body, { opacity:1 }); card.hidden = false; $('#onbHelp').setAttribute('aria-expanded', 'true'); // estado ON del botón del rail
