@@ -37,7 +37,7 @@
 .exp-rng{flex:1;min-width:0;accent-color:var(--ink);height:28px;margin:0}
 .exp-val{width:34px;text-align:right;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
 /* Onboarding · paso «Exportar»: selector de formato + lectura de salida. Las reglas viven aquí (no en main.css) con selector específico */
-.onb .onb-body{height:304px} /* sube una sola vez para TODOS los pasos (antes 256 px): cabe el selector sin desbordar */
+.onb .onb-body{height:256px} /* alto fijo igual en los 3 pasos: el más alto (paso 3, texto + subtítulo + Reproducir) ocupa ~246 px */
 .onb .onb-fmt{display:grid;gap:6px}
 .onb .onb-fmt .exp-seg button{height:26px;padding:0 4px;font-size:11px}
 .onb .onb-fmt-out{font-size:11px;font-weight:500;line-height:14px;height:14px;color:var(--mute);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

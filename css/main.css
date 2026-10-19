@@ -10,20 +10,22 @@ button{font:inherit;color:inherit}
 /* Canvas = fondo fijo a pantalla completa. Toda la UI flota encima. */
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;background:var(--paper)}
 body.recording .ui{opacity:0;visibility:hidden;pointer-events:none}
-body.recording .guide,body.recording .grid3{display:none}
+body.recording .guide,body.recording .grid3,body.recording .gstroke{display:none}
 
 /* Barra de progreso de exportación: 2px en el borde inferior, visible incluso con la UI oculta */
 .prog{position:fixed;z-index:35;left:0;right:0;bottom:0;height:2px;background:var(--ink);transform-origin:left;transform:scaleX(0);
   opacity:0;transition:opacity 400ms var(--ease);pointer-events:none}
 .prog.on{opacity:1}
-.guide{position:fixed;z-index:2;pointer-events:none;box-shadow:0 0 0 100vmax color-mix(in srgb,var(--black) calc(var(--guide-dim,.8) * 100%),transparent); /* marco oscuro fuera del formato */
-  transition:left var(--dur) var(--ease),top var(--dur) var(--ease),width var(--dur) var(--ease),height var(--dur) var(--ease)}
+.guide{position:fixed;z-index:2;pointer-events:none;box-shadow:0 0 0 100vmax color-mix(in srgb,var(--black) calc(var(--guide-dim,.8) * 100%),transparent); } /* marco oscuro fuera del formato; sin ease: cambia al instante con el formato */
 /* Retícula 3×3 (regla de tercios) dentro del formato de exportación: líneas punteadas #555 al 30 %.
    Los guiones son gradientes repetidos (4 px tinta / 4 px vacío), sin bordes. Solo es guía: no se exporta. */
+/* Trazo del encuadre (dimmer): 1 px blanco al 30 % con mix-blend-mode:difference → se ve sobre fondos claros y oscuros. Nodo propio, hermano de .guide
+   (mismo motivo que la retícula: un hijo de .guide no vería el canvas). Sigue el toggle «Frame» y no se dibuja con el formato «Pantalla» (sin marco). */
+.gstroke{position:fixed;z-index:3;pointer-events:none;mix-blend-mode:difference;opacity:.3;box-shadow:inset 0 0 0 1px var(--white)}
+.gstroke.full,body.no-frame .gstroke{display:none}
 /* Retícula: nodo propio (hermano de .guide, NO hijo: un hijo de .guide quedaría aislado en su stacking context y mix-blend-mode no vería el canvas).
    Líneas blancas con mix-blend-mode:difference → invierten lo que hay debajo, así que contrastan sobre cualquier fondo, claro u oscuro. */
-.grid3{position:fixed;z-index:3;pointer-events:none;mix-blend-mode:difference;opacity:.6;
-  transition:left var(--dur) var(--ease),top var(--dur) var(--ease),width var(--dur) var(--ease),height var(--dur) var(--ease)}
+.grid3{position:fixed;z-index:3;pointer-events:none;mix-blend-mode:difference;opacity:.6}
 /* Toggles temporales: clase en <body> → ocultar retícula / marco oscuro sin tocar el layout del guide */
 body.no-grid .grid3{display:none}
 .grid3 .v.a{left:var(--x1,33.333%)}.grid3 .v.b{left:var(--x2,66.666%)}.grid3 .h.a{top:var(--y1,33.333%)}.grid3 .h.b{top:var(--y2,66.666%)} /* posiciones enteras en px, las calcula layout() */
@@ -97,9 +99,9 @@ body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));p
 .tgl[aria-checked="true"] .tgl-track i{transform:translateX(12px)}
 .dock .btn:disabled{opacity:.3}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:7px;opacity:.5;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);overflow:hidden;cursor:pointer;background:var(--line);padding:0}
-.thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.thumb.cur{opacity:1;transform:translateY(-3px)} /* activa: opacidad completa + leve elevación, sin borde */
+.thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:8px;opacity:.5;transition:opacity var(--dur) var(--ease);overflow:hidden;isolation:isolate;cursor:pointer;background:var(--line);padding:0}
+.thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;border-radius:inherit}
+.thumb.cur{opacity:1} /* activa: opacidad completa (el foco de color basta: sin elevación ni borde, que rompían el redondeo) */
 @media (hover:hover){.thumb:hover{opacity:.85}}
 .thumb.sel::after{content:"";position:absolute;inset:auto 4px 4px auto;width:7px;height:7px;border-radius:50%;background:var(--ink)}
 .thumb .vid{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;background:var(--ink);color:var(--paper-2);letter-spacing:.08em}
@@ -170,6 +172,7 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 .onb-sub{margin-top:-4px;font-size:12px;font-weight:500;color:var(--ink)}
 .onb p{margin:0;font-size:13px;line-height:1.5;color:var(--mute);font-weight:400}
 .onb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
+.onb-acts:empty{display:none}
 .onb-nav{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line)}
 .btn:disabled{opacity:.3;pointer-events:none}
 

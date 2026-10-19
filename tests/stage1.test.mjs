@@ -79,3 +79,31 @@ await run('etapa 1 · sin hover pegado en táctil', async ({ page, ok, boot }) =
   await page.tap('#railExport'); await page.waitForTimeout(900); await page.tap('#expClose'); await page.waitForTimeout(1800);
   const railAfter = await bg('#railExport'); ok(railAfter === railBefore, `tras abrir y cerrar con toques, el botón del rail vuelve a su fondo (${railBefore} → ${railAfter}; expanded=${await page.getAttribute('#railExport', 'aria-expanded')})`);
 }, { mobile: true, width: 390, height: 844 });
+
+// Retoques visuales mínimos: trazo del encuadre del dimmer y miniaturas del dock sin elevación.
+await run('visual · trazo del dimmer y miniaturas del dock', async ({ page, ok, eq, boot }) => {
+  await boot();
+  await page.evaluate(() => gsap.ticker.lagSmoothing(0));
+  await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
+  const ev = body => page.evaluate(`(async () => { const P = (await import('/js/core/params.js')).P; const fr = await import('/js/three/frame.js'); ${body} })()`);
+  const stroke = () => page.evaluate(() => { const s = document.querySelector('#gstroke'), c = getComputedStyle(s), r = s.getBoundingClientRect(), g = document.querySelector('#guide').getBoundingClientRect();
+    return { blend: c.mixBlendMode, op: c.opacity, shadow: c.boxShadow, display: c.display, same: [r.x, r.y, r.width, r.height].map(Math.round).join() === [g.x, g.y, g.width, g.height].map(Math.round).join() }; });
+  await ev("P.exp.format = '4:5'; fr.layout();");
+  const a = await stroke();
+  eq([a.blend, a.op], ['difference', '0.3'], 'trazo: mix-blend-mode difference y opacidad 0.3');
+  ok(/255, 255, 255/.test(a.shadow) && /inset/.test(a.shadow) && /1px/.test(a.shadow), `trazo de 1 px blanco hacia dentro (${a.shadow})`);
+  ok(a.same && a.display !== 'none', 'el trazo coincide con el encuadre (mismo rectángulo) y se ve con un formato con ratio');
+  await ev("P.exp.format = 'Pantalla'; fr.layout();");
+  eq((await stroke()).display, 'none', 'con «Pantalla» (sin marco) no hay trazo');
+  await ev("P.exp.format = '9:16'; fr.layout();");
+  await page.evaluate(() => document.body.classList.add('no-frame'));
+  eq((await stroke()).display, 'none', 'el toggle Frame (no-frame) también oculta el trazo');
+  await page.evaluate(() => document.body.classList.remove('no-frame'));
+
+  // miniaturas: la actual no se eleva y el radio es parejo (también en la imagen)
+  const th = await page.evaluate(() => { const all = [...document.querySelectorAll('.thumb')], cur = document.querySelector('.thumb.cur') || all[0];
+    return { tf: getComputedStyle(cur).transform, tops: [...new Set(all.map(t => Math.round(t.getBoundingClientRect().top)))], radii: [...new Set(all.map(t => getComputedStyle(t).borderTopLeftRadius))], img: getComputedStyle(cur.querySelector('img')).borderTopLeftRadius }; });
+  eq(th.tf, 'none', 'la miniatura actual no usa transform (sin elevación)');
+  eq(th.tops.length, 1, 'todas las miniaturas alineadas en la misma línea');
+  eq([th.radii, th.img], [['8px'], '8px'], 'radio 8px parejo en miniaturas e imagen');
+});

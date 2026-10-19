@@ -48,7 +48,7 @@ await run('export-card · formato, tipo y estimaciones', async ({ page, ok, eq, 
   await page.click('#onbNext'); await wait(900); await chk(3);
   eq(new Set(hs).size, 1, `altura del onboarding igual en los 3 pasos (${hs})`);
   await page.click('#onbBack'); await wait(900);
-  await clickIn('#onbActs', 'Abrir exportar'); await wait(1200);
+  await page.click('#railExport'); await wait(1200); // el rail abre la card (y cierra el onboarding sin marcarlo)
   eq(await pressed('#expMain .exp-row.wide'), ['4:5'], 'la card refleja el formato elegido en el onboarding');
   eq(await txt('#expSize'), '1536×1920', 'lectura de la card sincronizada');
   // card → onboarding

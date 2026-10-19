@@ -2,29 +2,24 @@ import { $, icons, reduced } from '../core/utils.js';
 import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
-import { applyShotPreset } from '../three/camera.js';
 import { exportSize } from '../three/formats.js';
 import { layout } from '../three/frame.js';
-import { pane } from './pane.js';
-import { closeExport, exportOpen, openExport } from './exportcard.js';
-import { addShot, togglePres } from './strips.js';
+import { closeExport, exportOpen } from './exportcard.js';
+import { togglePres } from './strips.js';
 import { closeShotEditor, shotEditorOpen } from './shoteditor.js';
 
 /* ───────────────────────── Onboarding ─────────────────────────
-   Tarjeta flotante de 3 pasos (Imágenes → Exportar → Cinemática). Los controles arrancan colapsados, así que
-   cada paso trae sus propias acciones: no hace falta abrir el panel hasta «Avanzado». Manual (Atrás / Siguiente).
+   Tarjeta flotante de 3 pasos (Imágenes → Exportar → Cinemática), solo informativa: el selector de formato del paso 2 y el botón
+   «Reproducir» del paso 3 son lo único accionable; el resto se hace con el rail. Manual (Atrás / Siguiente).
    El flag vive en su propia clave de localStorage (no en P): no se exporta con el proyecto JSON. */
 const ONB_KEY = 'mockup-studio:onboarded';
 const seen = () => { try { return !!localStorage.getItem(ONB_KEY); } catch { return false; } };
 const mark = () => { try { localStorage.setItem(ONB_KEY, '1'); } catch {} };
 
 const STEPS = [
-  { ...T.onboarding.steps[0],
-    acts:[[T.common.load, () => $('#file').click(), true]] },
-  { ...T.onboarding.steps[1], fmt:true,
-    acts:[[T.onboarding.openExport, () => { mark(); openExport(); }, true], [T.onboarding.advanced, () => { pane.expanded = true; }]] },
-  { ...T.onboarding.steps[2],
-    acts:[[T.onboarding.saveS, addShot, true], ['Preset', applyShotPreset], [T.onboarding.play, togglePres]] },
+  { ...T.onboarding.steps[0], acts:[] },
+  { ...T.onboarding.steps[1], fmt:true, acts:[] },
+  { ...T.onboarding.steps[2], acts:[[T.onboarding.play, togglePres]] },
 ];
 let i = 0;
 

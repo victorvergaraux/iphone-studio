@@ -69,6 +69,8 @@ export function layout(){
   gr.hidden = false; Object.assign(gr.style, { left:`${gx}px`, top:`${gy}px`, width:`${gw}px`, height:`${gh}px` });
   gr.style.setProperty('--x1', `${Math.round(gw / 3)}px`); gr.style.setProperty('--x2', `${Math.round(gw * 2 / 3)}px`);
   gr.style.setProperty('--y1', `${Math.round(gh / 3)}px`); gr.style.setProperty('--y2', `${Math.round(gh * 2 / 3)}px`);
+  const gs = $('#gstroke'); gs.hidden = false; gs.classList.toggle('full', !guide); // trazo del encuadre (dimmer): mismo rect que la retícula
+  Object.assign(gs.style, { left:`${gx}px`, top:`${gy}px`, width:`${gw}px`, height:`${gh}px` });
   if (guide) $('#guideLbl').textContent = P.exp.format;
   const t = targetShift();
   if (Math.abs(t.x - viewShift.x) > 0.5 || Math.abs(t.y - viewShift.y) > 0.5) gsap.to(viewShift, { x:t.x, y:t.y, duration:reduced ? 0 : DUR, ease:EASE, overwrite:true });

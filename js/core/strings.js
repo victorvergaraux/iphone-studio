@@ -81,7 +81,7 @@ export const T = {
       { title:'Exportar', text:'Elige el formato y descarga un PNG o un video con la composición actual.' },
       { title:'Cinemática', sub:'Modo avanzado', text:'Mueve la cámara con el mouse y guarda cada ángulo para armar tu cinemática. O parte de un preset.' },
     ],
-    openExport: 'Abrir exportar', advanced: 'Avanzado', saveS: 'Guardar · S', play: 'Reproducir',
+    play: 'Reproducir',
     next: 'Siguiente', done: 'Listo',
     output: (w, h, screen) => `Salida ${w}×${h} px` + (screen ? ' · depende de tu ventana' : ''),
   },
