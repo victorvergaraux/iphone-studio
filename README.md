@@ -55,7 +55,7 @@ Every downloaded file gets a random 5-character code (`name-XXXXX.ext`).
 
 | Folder | What it controls |
 | --- | --- |
-| **FPS / Quality** | Frame-rate graph and render quality: **Auto** (lowers resolution only while moving if the FPS drops), **High**, **Max** |
+| **FPS / Quality** | Frame-rate graph and render quality: **Auto** (lowers resolution only while moving if the FPS drops, and only goes back up when there is clear headroom), **Medium** (a stable ≈ 40 FPS profile: it measures your machine once, fixes the resolution and never changes it again, so there is no flicker; lighter AO, no progressive refinement), **High**, **Max** |
 | **Scene** | Palette and colors, solids / ground visibility, floor material (*Real* adds the smudge texture, *Rough*, *Metal*, *Scale*), object positions and presets (*Objs*), HDRI, shadow and AO |
 | **Phone** | Body, glass and fingerprints, brushed metal, pose and idle motion |
 | **Screens** | Carousel transition (↑ ↓ → ← Fade), timing, parallax, framing of the selected screen |

@@ -13,7 +13,7 @@ export const P = {
   car:   { mode:'rtl', transition:0.85, fadeDur:1.2, hold:2.6, scrollDelay:0.6, parallax:0.38, autoplay:true, exposure:1.0, screenBg:'#0b0b0b', replaceAll:true },
   grade: { brightness:0, contrast:1, vignette:0.12, grain:0 },
   shots: { preset:'base', transition:0, hold:3, loop:true, randomHalf:false, halfCount:1 },
-  quality:{ mode:'auto' },                 // auto | high | max (ver js/three/quality.js)
+  quality:{ mode:'auto' },                 // auto | medium | high | max (ver js/three/quality.js)
   ui:    { dock:false },                   // pantallas (dock) visibles: oculto por defecto; control propio, independiente del panel
   exp:   { format:'9:16', kind:'png', long:1920, length:15, mbps:16, fps:30, pngScale:2, playShots:true, mode:'offline', container:'auto', transparent:false, shadowOpacity:0.45 },
 };

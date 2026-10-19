@@ -7,8 +7,8 @@ import { camera, composer, gradePass, gtao, renderer, setAoScale } from './rende
 import { sun } from './scene.js';
 import { accum } from './accum.js';
 
-// Pixel ratio del preview. Lo gobierna el selector Quality (js/three/quality.js): high/auto = min(dpr, 2), max = min(dpr, 3).
-export let pr = Math.min(devicePixelRatio, P.quality.mode === 'max' ? 3 : 2), recording = false, exporting = false;
+// Pixel ratio del preview. Lo gobierna el selector Quality (js/three/quality.js): high/auto = min(dpr, 2), max = min(dpr, 3), medium = calibrado (≈40 fps).
+export let pr = Math.min(devicePixelRatio, P.quality.mode === 'max' ? 3 : P.quality.mode === 'medium' ? 1.25 : 2), recording = false, exporting = false; // medium arranca conservador y se calibra (quality.js)
 export const setPr = v => { pr = v; };
 export const setRecording = v => { recording = v; };
 // `exporting` solo lo cambian beginExport/endExport (frame.js) mediante este setter interno (no se reexporta en la fachada).
@@ -31,7 +31,7 @@ export function setQuality(high){
   accum.reset(); // AO/sombra cambian → reinicia la acumulación progresiva
   high = high || P.quality.mode === 'max'; // Max: el preview también usa AO 24 y sombra 4K (el export siempre pasa true)
   setAoScale(1);
-  gtao.updateGtaoMaterial({ samples: high ? 24 : 12 });
+  gtao.updateGtaoMaterial({ samples: high ? 24 : P.quality.mode === 'medium' ? 8 : 12 }); // Medium: AO más ligero en el preview
   const sz = high ? 4096 : 2048;
   if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); sun.shadow.map?.dispose(); sun.shadow.map = null; }
 }

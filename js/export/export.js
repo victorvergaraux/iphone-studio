@@ -52,7 +52,7 @@ async function withTransparent(fn){
 /* Número de muestras del refinamiento progresivo del PNG, derivado del modo Quality y del tamaño de render:
    auto 8 · high 12 · max 16; por encima de ~12 Mpx (4K+) se reduce a la mitad para que el tiempo no se dispare. */
 function snapshotSamples(w, h){
-  const base = { auto:8, high:12, max:16 }[P.quality.mode] ?? 8;
+  const base = { auto:8, medium:8, high:12, max:16 }[P.quality.mode] ?? 8;
   return w * h > 12e6 ? Math.max(4, base / 2) : base;
 }
 // Cede el control al navegador para que pinte el toast de progreso (rAF se estrangula en pestañas ocultas → respaldo con timeout)
