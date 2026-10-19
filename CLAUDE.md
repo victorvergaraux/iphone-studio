@@ -47,6 +47,7 @@ Parameters `P` (single source of truth) → Persistence (`localStorage` key `moc
 - `node tools/unused.mjs` writes `tools/unused-report.md` (unused exports/imports/CSS, dead hooks, stale comments). Test-only exports (`info`, `limits`, `snap`, `commitShots`, `glLost`, `videoSyncActive`) are intentional test seams.
 
 ## Gotchas
+- Social preview (Open Graph / X card) lives in `index.html`: title, 130-char description and the README header image (`ref/67ab…png`, 1920×1010). `og:image` MUST be an absolute public URL (crawlers don't resolve relative paths): it points at the GitHub raw file; when a production domain exists, switch it to `https://<domain>/ref/….png` and add `og:url`/canonical. Guarded by `tests/social.test.mjs`.
 - `scheduleCar()` needs ≥ 2 screens to arm the auto-advance: examples load in the background after the first one, so `main.js` calls `scheduleCar()` again when they arrive (regression test in `tests/examples.test.mjs`).
 - `downloads` artifact capability exists only inside claude.ai; outside it `offer()` falls back to a modal/anchor download — test PNG + video locally.
 - Headless testing uses Swiftshader: inject `gsap.ticker.lagSmoothing(0)` so timings are real; `requestAnimationFrame` can be very slow there (don't depend on it for UI state).
