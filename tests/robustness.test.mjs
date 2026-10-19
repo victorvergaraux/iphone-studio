@@ -17,11 +17,13 @@ await run('robustez · contexto WebGL', async ({ page, ok, boot }) => {
   await page.addInitScript(SPY); await boot(); await noLag(page);
   const frame = () => page.evaluate(async () => (await import('/js/three/renderer.js')).renderer.info.render.frame);
   const lost = () => page.evaluate(async () => (await import('/js/three/glcontext.js')).glLost);
+  const advances = async () => { const f0 = await frame(); for (let i = 0; i < 40; i++) { await page.waitForTimeout(250); if (await frame() > f0) return true; } return false; }; // robusto con CPU justa
   // Con grano > 0 el loop dibuja en cada cuadro (si no, el refinamiento progresivo se detiene al completarse y el contador no crece)
   await page.evaluate(async () => { (await import('/js/core/params.js')).P.grade.grain = 0.05; window.__lose = (await import('/js/three/renderer.js')).renderer.getContext().getExtension('WEBGL_lose_context'); });
   const ctx = a => page.evaluate(a => window.__lose[a](), a);
   const noticeOn = () => page.evaluate(() => document.getElementById('notice')?.classList.contains('on') ? document.getElementById('notice').textContent : '');
-  let f = await frame(); await page.waitForTimeout(600); ok(await frame() > f, 'render activo antes de perder el contexto');
+  let f;
+  ok(await advances(), 'render activo antes de perder el contexto');
 
   await ctx('loseContext'); await page.waitForTimeout(400);
   ok(await lost(), 'glLost = true tras webglcontextlost');
@@ -30,7 +32,7 @@ await run('robustez · contexto WebGL', async ({ page, ok, boot }) => {
 
   await ctx('restoreContext'); await page.waitForTimeout(3500);
   ok(!(await lost()), 'glLost = false tras restaurar');
-  f = await frame(); await page.waitForTimeout(700); ok(await frame() > f, 'la escena vuelve a renderizar tras restaurar');
+  ok(await advances(), 'la escena vuelve a renderizar tras restaurar');
   ok((await noticeOn()) === '', 'el aviso se oculta al restaurar');
   ok(await page.evaluate(async () => !!(await import('/js/three/renderer.js')).scene.environment), 'el entorno (PMREM) existe tras reconstruirlo');
 
@@ -38,7 +40,7 @@ await run('robustez · contexto WebGL', async ({ page, ok, boot }) => {
   await ctx('loseContext'); await page.waitForTimeout(5600);
   ok(/Recargar/.test(await page.evaluate(() => document.querySelector('#notice button')?.textContent || '')), 'sin restaurar en 5 s: botón «Recargar»');
   await ctx('restoreContext'); await page.waitForTimeout(3000);
-  f = await frame(); await page.waitForTimeout(600); ok(await frame() > f, 'segunda restauración también reanuda');
+  ok(await advances(), 'segunda restauración también reanuda');
 });
 
 // ── 2 · Soporte de video (sin VideoEncoder / sin MediaRecorder) y PNG ──

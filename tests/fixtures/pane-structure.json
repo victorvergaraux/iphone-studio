@@ -1,0 +1,767 @@
+{
+ "rootExpanded": true,
+ "items": [
+  {
+   "type": "fpsgraph",
+   "label": "FPS",
+   "btn": []
+  },
+  {
+   "type": "select",
+   "label": "Quality",
+   "btn": []
+  },
+  {
+   "folder": "Scene",
+   "expanded": true,
+   "items": [
+    {
+     "tabs": [
+      {
+       "title": "Set",
+       "items": [
+        {
+         "type": "select",
+         "label": "Palette",
+         "btn": []
+        },
+        {
+         "type": "color",
+         "label": "BG",
+         "btn": []
+        },
+        {
+         "type": "color",
+         "label": "Floor",
+         "btn": []
+        },
+        {
+         "type": "color",
+         "label": "Blocks",
+         "btn": []
+        },
+        {
+         "type": "color",
+         "label": "Props",
+         "btn": []
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "checkbox",
+         "label": "Solids",
+         "btn": []
+        },
+        {
+         "type": "checkbox",
+         "label": "Ground",
+         "btn": []
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "checkbox",
+         "label": "Real",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Rough",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Metal",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Map R",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Map M",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Scale",
+         "btn": [],
+         "min": 0.05,
+         "max": 4,
+         "step": 0.01
+        }
+       ]
+      },
+      {
+       "title": "Objs",
+       "items": [
+        {
+         "type": "select",
+         "label": "Preset",
+         "btn": []
+        },
+        {
+         "type": "text",
+         "label": "Tower",
+         "btn": []
+        },
+        {
+         "type": "text",
+         "label": "Block",
+         "btn": []
+        },
+        {
+         "type": "text",
+         "label": "Cylinder",
+         "btn": []
+        },
+        {
+         "type": "text",
+         "label": "Sphere",
+         "btn": []
+        }
+       ]
+      },
+      {
+       "title": "HDRI",
+       "items": [
+        {
+         "type": "select",
+         "label": "Map",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Intensity",
+         "btn": [],
+         "min": 0,
+         "max": 4,
+         "step": 0.01
+        },
+        {
+         "type": "checkbox",
+         "label": "Normalize",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Rotation",
+         "btn": [],
+         "min": 0,
+         "max": 360,
+         "step": 1
+        },
+        {
+         "type": "slider",
+         "label": "Exposure",
+         "btn": [],
+         "min": 0.2,
+         "max": 3,
+         "step": 0.01
+        },
+        {
+         "type": "select",
+         "label": "Tone",
+         "btn": []
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "select",
+         "label": "Backdrop",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Blur",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Gain",
+         "btn": [],
+         "min": 0,
+         "max": 3,
+         "step": 0.01
+        }
+       ]
+      },
+      {
+       "title": "Light",
+       "items": [
+        {
+         "type": "checkbox",
+         "label": "Shadow",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Strength",
+         "btn": [],
+         "min": 0,
+         "max": 5,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Softness",
+         "btn": [],
+         "min": 0.2,
+         "max": 12,
+         "step": 0.1
+        },
+        {
+         "type": "slider",
+         "label": "Elevation",
+         "btn": [],
+         "min": 5,
+         "max": 80,
+         "step": 1
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "AO",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Radius",
+         "btn": [],
+         "min": 0.05,
+         "max": 1,
+         "step": 0.01
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folder": "Phone",
+   "expanded": false,
+   "items": [
+    {
+     "tabs": [
+      {
+       "title": "Body",
+       "items": [
+        {
+         "type": "select",
+         "label": "Pose",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Yaw",
+         "btn": [],
+         "min": -180,
+         "max": 180,
+         "step": 1
+        },
+        {
+         "type": "slider",
+         "label": "Y",
+         "btn": [],
+         "min": -0.6,
+         "max": 1.5,
+         "step": 0.005
+        },
+        {
+         "type": "slider",
+         "label": "Radius",
+         "btn": [],
+         "min": 0.04,
+         "max": 0.33,
+         "step": 0.005
+        },
+        {
+         "type": "slider",
+         "label": "Buttons",
+         "btn": [],
+         "min": 0.001,
+         "max": 0.02,
+         "step": 0.0005
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "checkbox",
+         "label": "Island",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Width",
+         "btn": [],
+         "min": 0.08,
+         "max": 0.34,
+         "step": 0.005
+        },
+        {
+         "type": "slider",
+         "label": "Round",
+         "btn": [],
+         "min": 0.05,
+         "max": 1,
+         "step": 0.01
+        }
+       ]
+      },
+      {
+       "title": "Glass",
+       "items": [
+        {
+         "type": "slider",
+         "label": "Reflect",
+         "btn": [],
+         "min": 0,
+         "max": 2,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Rough",
+         "btn": [],
+         "min": 0,
+         "max": 0.5,
+         "step": 0.005
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Smear",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Sheen",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Haze",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Scale",
+         "btn": [],
+         "min": 0.3,
+         "max": 6,
+         "step": 0.05
+        }
+       ]
+      },
+      {
+       "title": "Metal",
+       "items": [
+        {
+         "type": "select",
+         "label": "Finish",
+         "btn": []
+        },
+        {
+         "type": "color",
+         "label": "Color",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Rough",
+         "btn": [],
+         "min": 0.02,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Metal",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Brush",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Scale",
+         "btn": [],
+         "min": 0.5,
+         "max": 20,
+         "step": 0.1
+        },
+        {
+         "type": "slider",
+         "label": "Angle",
+         "btn": [],
+         "min": 0,
+         "max": 180,
+         "step": 1
+        },
+        {
+         "type": "slider",
+         "label": "Aniso",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        }
+       ]
+      },
+      {
+       "title": "Motion",
+       "items": [
+        {
+         "type": "select",
+         "label": "Type",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Amp",
+         "btn": [],
+         "min": 0,
+         "max": 3,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Speed",
+         "btn": [],
+         "min": 0.1,
+         "max": 3,
+         "step": 0.01
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folder": "Screens",
+   "expanded": false,
+   "items": [
+    {
+     "tabs": [
+      {
+       "title": "Flow",
+       "items": [
+        {
+         "type": "select",
+         "label": "Mode",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Slide",
+         "btn": [],
+         "min": 0.3,
+         "max": 3,
+         "step": 0.05
+        },
+        {
+         "type": "slider",
+         "label": "Fade",
+         "btn": [],
+         "min": 0.1,
+         "max": 4,
+         "step": 0.05
+        },
+        {
+         "type": "slider",
+         "label": "Hold",
+         "btn": [],
+         "min": 0.5,
+         "max": 12,
+         "step": 0.1
+        },
+        {
+         "type": "slider",
+         "label": "Delay",
+         "btn": [],
+         "min": 0,
+         "max": 6,
+         "step": 0.05
+        },
+        {
+         "type": "separator",
+         "label": null,
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Parallax",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Exposure",
+         "btn": [],
+         "min": 0.3,
+         "max": 1.6,
+         "step": 0.01
+        },
+        {
+         "type": "color",
+         "label": "Fill",
+         "btn": []
+        }
+       ]
+      },
+      {
+       "title": "Edit",
+       "items": [
+        {
+         "type": "select",
+         "label": "Fit",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Zoom",
+         "btn": [],
+         "min": 0.5,
+         "max": 3,
+         "step": 0.01
+        },
+        {
+         "type": "point2d",
+         "label": "Offset",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Scroll",
+         "btn": [],
+         "min": 0,
+         "max": 1,
+         "step": 0.001
+        },
+        {
+         "type": "checkbox",
+         "label": "Auto",
+         "btn": []
+        },
+        {
+         "type": "button",
+         "label": "",
+         "btn": [
+          "Reset"
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folder": "Camera",
+   "expanded": false,
+   "items": [
+    {
+     "tabs": [
+      {
+       "title": "Lens",
+       "items": [
+        {
+         "type": "slider",
+         "label": "FOV",
+         "btn": [],
+         "min": 8,
+         "max": 60,
+         "step": 0.5
+        },
+        {
+         "type": "slider",
+         "label": "Zoom",
+         "btn": [],
+         "min": 0.5,
+         "max": 4,
+         "step": 0.01
+        },
+        {
+         "type": "select",
+         "label": "Ease",
+         "btn": []
+        },
+        {
+         "type": "slider",
+         "label": "Fly",
+         "btn": [],
+         "min": 0.3,
+         "max": 6,
+         "step": 0.05
+        },
+        {
+         "type": "slider",
+         "label": "Drift",
+         "btn": [],
+         "min": 0,
+         "max": 4,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Rate",
+         "btn": [],
+         "min": 0.05,
+         "max": 4,
+         "step": 0.01
+        }
+       ]
+      },
+      {
+       "title": "Grade",
+       "items": [
+        {
+         "type": "slider",
+         "label": "Bright",
+         "btn": [],
+         "min": -0.3,
+         "max": 0.3,
+         "step": 0.005
+        },
+        {
+         "type": "slider",
+         "label": "Contrast",
+         "btn": [],
+         "min": 0.6,
+         "max": 1.6,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Vignette",
+         "btn": [],
+         "min": 0,
+         "max": 0.8,
+         "step": 0.01
+        },
+        {
+         "type": "slider",
+         "label": "Grain",
+         "btn": [],
+         "min": 0,
+         "max": 0.12,
+         "step": 0.001
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folder": "UI",
+   "expanded": false,
+   "items": [
+    {
+     "type": "slider",
+     "label": "Dim",
+     "btn": [],
+     "min": 0.1,
+     "max": 1,
+     "step": 0.01
+    },
+    {
+     "type": "checkbox",
+     "label": "Grid",
+     "btn": []
+    },
+    {
+     "type": "checkbox",
+     "label": "Frame",
+     "btn": []
+    },
+    {
+     "type": "separator",
+     "label": null,
+     "btn": []
+    },
+    {
+     "type": "buttongrid",
+     "label": "JSON",
+     "btn": [
+      "Export",
+      "Import"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "Cache",
+     "btn": [
+      "Clear"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -47,7 +47,7 @@ await run('image-quality · acumulación progresiva', async ({ page, ok, boot, e
   ok(many.abrupt < one.abrupt * 0.95, `menos saltos abruptos con acumulación (${many.abrupt} < 0.95 × ${one.abrupt})`);
   ok(many.soft > one.soft, `más transiciones intermedias (bordes suavizados): ${many.soft} > ${one.soft}`);
   const st = await page.evaluate(async () => {
-    const { accum } = await import('/js/three/accum.js'); const f = await import('/js/three/format.js');
+    const { accum } = await import('/js/three/accum.js'); const f = await import('/js/three/session.js');
     return { n: accum.n, en: accum.pass.enabled, busy: accum.busy, exporting: f.exporting, css: document.querySelector('#c').style.cssText };
   });
   ok(!st.busy && !st.exporting && st.css === '', 'tras el snapshot el estado queda limpio (sin busy/export, CSS del canvas limpio)');

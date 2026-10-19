@@ -19,7 +19,7 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
 
   // ── Rail: botón, orden y accesibilidad ──
   eq(await page.evaluate(() => [...document.querySelectorAll('#rail button')].map(b => b.id)), ['onbHelp', 'railExport', 'railDock', 'railPanel', 'railShots', 'railPlay'], 'botón Tomas antes de Play');
-  eq(await page.evaluate(() => { const b = document.querySelector('#railShots'); return [b.dataset.tip, b.getAttribute('aria-expanded'), !!b.getAttribute('aria-label')]; }), ['Tomas', 'false', true], 'tooltip, aria-expanded y aria-label');
+  eq(await page.evaluate(() => { const b = document.querySelector('#railShots'); return [b.dataset.tip, b.getAttribute('aria-expanded'), !!b.getAttribute('aria-label')]; }), ['Cinemática', 'false', true], 'tooltip, aria-expanded y aria-label');
 
   // ── Abrir / cerrar y exclusión mutua ──
   await page.click('#railShots'); await wait(1300);

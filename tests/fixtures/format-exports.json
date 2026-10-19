@@ -1,0 +1,33 @@
+{
+  "_doc": "Exports de js/three/format.js ANTES del refactor 4a (kind = declaración original, jstype = typeof esperado en runtime). 'removed' = código muerto eliminado (sin usos en js/ ni tests/).",
+  "exports": [
+    { "name": "FORMATS", "kind": "const", "jstype": "object" },
+    { "name": "pr", "kind": "let", "jstype": "number" },
+    { "name": "recording", "kind": "let", "jstype": "boolean" },
+    { "name": "exporting", "kind": "let", "jstype": "boolean" },
+    { "name": "PANEL_W", "kind": "const", "jstype": "number" },
+    { "name": "wide", "kind": "function", "jstype": "function" },
+    { "name": "panelOpen", "kind": "function", "jstype": "function" },
+    { "name": "viewShift", "kind": "const", "jstype": "object" },
+    { "name": "lastSx", "kind": "let", "jstype": "object" },
+    { "name": "lastSy", "kind": "let", "jstype": "object" },
+    { "name": "guide", "kind": "let", "jstype": "object" },
+    { "name": "gridRect", "kind": "let", "jstype": "object" },
+    { "name": "exportSize", "kind": "function", "jstype": "function" },
+    { "name": "setRenderSize", "kind": "function", "jstype": "function" },
+    { "name": "applyView", "kind": "function", "jstype": "function" },
+    { "name": "setQuality", "kind": "function", "jstype": "function" },
+    { "name": "beginExport", "kind": "function", "jstype": "function" },
+    { "name": "endExport", "kind": "function", "jstype": "function" },
+    { "name": "fitCanvasCss", "kind": "function", "jstype": "function" },
+    { "name": "layout", "kind": "function", "jstype": "function" },
+    { "name": "setPanel", "kind": "function", "jstype": "function" },
+    { "name": "setPr", "kind": "function", "jstype": "function" },
+    { "name": "setRecording", "kind": "function", "jstype": "function" }
+  ],
+  "removed": [
+    { "name": "INFO", "kind": "const", "reason": "sin usos fuera de format.js (solo se escribía INFO.salida en layout)" },
+    { "name": "infoBinding", "kind": "let", "reason": "siempre null: nadie llamaba setInfoBinding" },
+    { "name": "setInfoBinding", "kind": "function", "reason": "sin importadores" }
+  ]
+}
