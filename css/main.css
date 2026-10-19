@@ -12,10 +12,6 @@ button{font:inherit;color:inherit}
 body.recording .ui{opacity:0;visibility:hidden;pointer-events:none}
 body.recording .guide,body.recording .grid3{display:none}
 
-/* Botón flotante de ajustes: sigue el borde izquierdo del panel */
-.fab{position:fixed;z-index:21;top:calc(var(--gap) + env(safe-area-inset-top,0px));right:calc(var(--pw) + max(var(--gap), env(safe-area-inset-right,0px)));border-radius:12px;box-shadow:none;
-  background:var(--paper-2);transition:right var(--dur) var(--ease),background var(--dur) var(--ease),color var(--dur) var(--ease)}
-.fab.btn{height:36px;width:36px}
 /* Barra de progreso de exportación: 2px en el borde inferior, visible incluso con la UI oculta */
 .prog{position:fixed;z-index:35;left:0;right:0;bottom:0;height:2px;background:var(--ink);transform-origin:left;transform:scaleX(0);
   opacity:0;transition:opacity 400ms var(--ease);pointer-events:none}
@@ -78,9 +74,9 @@ body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));p
 .tools{display:flex;gap:6px;flex-wrap:wrap}
 .btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);cursor:pointer;
   font-size:11px;letter-spacing:.02em;transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
-.btn:hover{background:var(--ink);color:var(--paper-2)}
+@media (hover:hover){.btn:hover{background:var(--ink);color:var(--paper-2)}}
 .btn.solid{background:var(--ink);color:var(--paper-2)}
-.btn.solid:hover{background:#000}
+@media (hover:hover){.btn.solid:hover{background:var(--black)}}
 .btn.on{background:var(--accent);color:var(--ink)}
 .btn svg{width:14px;height:14px;stroke-width:1.6}
 .btn.icon{padding:0;width:28px;justify-content:center;flex:0 0 auto}
@@ -90,11 +86,11 @@ body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));p
 .dock .label b{order:-1;font-weight:800;font-size:40px;letter-spacing:-.05em;line-height:.82;font-variant-numeric:tabular-nums}
 .dock .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;height:30px;padding:0 12px;border:0}
 .dock .btn.solid{background:var(--ink);color:var(--paper-2)}
-.dock .btn.solid:hover{background:var(--ink);opacity:.85}
+@media (hover:hover){.dock .btn.solid:hover{background:var(--ink);opacity:.85}}
 .dock .btn.icon{padding:0;width:30px}
 /* Interruptor (Reemplazar todo): pista + perilla, sin borde; encendida = pista en tinta */
 .dock .tgl{display:inline-flex;align-items:center;gap:10px;height:30px;padding:0 4px 0 0;border:0;background:none;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--ink)}
-.dock .tgl:hover{background:none;color:var(--ink)}
+@media (hover:hover){.dock .tgl:hover{background:none;color:var(--ink)}}
 .tgl-track{position:relative;flex:0 0 auto;width:28px;height:16px;border-radius:999px;background:var(--line);transition:background var(--dur) var(--ease)}
 .tgl-track i{position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--paper-2);transition:transform var(--dur) var(--ease)}
 .tgl[aria-checked="true"] .tgl-track{background:var(--ink)}
@@ -104,14 +100,9 @@ body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));p
 .thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:7px;opacity:.5;transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);overflow:hidden;cursor:pointer;background:var(--line);padding:0}
 .thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .thumb.cur{opacity:1;transform:translateY(-3px)} /* activa: opacidad completa + leve elevación, sin borde */
-.thumb:hover{opacity:.85}
+@media (hover:hover){.thumb:hover{opacity:.85}}
 .thumb.sel::after{content:"";position:absolute;inset:auto 4px 4px auto;width:7px;height:7px;border-radius:50%;background:var(--ink)}
 .thumb .vid{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;background:var(--ink);color:var(--paper-2);letter-spacing:.08em}
-.chip{flex:0 0 auto;display:inline-flex;align-items:center;height:28px;border:0;font-variant-numeric:tabular-nums}
-.chip button{background:none;border:0;height:100%;padding:0 10px;cursor:pointer;font-size:11px}
-.chip button + button{border:0;padding:0 7px;color:var(--mute)}
-.chip.cur{background:var(--accent)}
-.chip button:hover{text-decoration:underline}
 .empty{font-size:11px;color:var(--mute);align-self:center}
 
 /* Onboarding: tarjeta suiza (número gigante, filetes finos, una sola columna). Flota arriba a la izquierda, sin bloquear la escena. */
@@ -157,16 +148,18 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 @media (hover:hover){
   .rail .btn[data-tip]:hover::after,.rail .btn[data-tip]:focus-visible::after{opacity:1;transition:opacity 250ms cubic-bezier(.22,.61,.36,1) 300ms}
 }
-.rail .btn:hover,.rail .btn[aria-pressed="true"],.rail .btn[aria-expanded="true"]{background:var(--ink);color:var(--paper-2)}
+.rail .btn[aria-pressed="true"],.rail .btn[aria-expanded="true"]{background:var(--ink);color:var(--paper-2)}
+@media (hover:hover){.rail .btn:hover{background:var(--ink);color:var(--paper-2)}}
 /* Play: acción primaria, en --accent para distinguirlo; reproduciendo → tinta con icono accent */
 .rail #railPlay{background:var(--accent);color:var(--ink)}
-.rail #railPlay:hover,.rail #railPlay[aria-pressed="true"]{background:var(--ink);color:var(--accent)}
+.rail #railPlay[aria-pressed="true"]{background:var(--ink);color:var(--accent)}
+@media (hover:hover){.rail #railPlay:hover{background:var(--ink);color:var(--accent)}}
 .rail #railPlay[aria-pressed="true"] svg{fill:currentColor} /* stop relleno; la claqueta queda de trazo para conservar su detalle */
 .onb{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:300px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));
   padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:16px;font-family:var(--f-text)}
 .onb .btn{font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;height:30px;padding:0 12px}
 .onb-skip{position:absolute;top:30px;right:16px;background:none;border:0;padding:0;cursor:pointer;font-family:var(--f-text);font-size:12px;font-weight:500;color:var(--mute)}
-.onb-skip:hover{color:var(--ink);text-decoration:underline}
+@media (hover:hover){.onb-skip:hover{color:var(--ink);text-decoration:underline}}
 .onb-bars{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .onb-bars i{height:2px;background:var(--line);transition:background var(--dur) var(--ease)}
 .onb-bars i.on{background:var(--ink)}
@@ -184,14 +177,16 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 .modal .card{background:var(--paper-2);border:0;max-width:min(720px,100%);width:100%;padding:16px;display:grid;gap:12px}
 .modal .card img,.modal .card video{max-width:100%;max-height:60vh;display:block;margin:auto;background:#000}
 .modal p{margin:0;font-size:12px;line-height:1.5;color:var(--mute)}
-.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--paper-2);padding:8px 14px;font-size:11px;opacity:0;
-  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);z-index:50;pointer-events:none}
-.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast{position:fixed;left:50%;top:calc(var(--gap) + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:min(480px,calc(100vw - 2 * var(--gap)));
+  padding:9px 16px;border-radius:12px;background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));
+  color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;line-height:1.4;text-align:center;opacity:0;
+  transition:opacity 300ms cubic-bezier(.64,0,.78,0);z-index:50;pointer-events:none}
+.toast.on{opacity:1;transition:opacity 400ms cubic-bezier(.22,.61,.36,1)}
+body.has-notice .toast{top:calc(var(--gap) + 52px + env(safe-area-inset-top,0px))} /* con un aviso persistente visible, el toast se apila debajo */ /* solo opacidad: sin movimiento en Y */
 
 @media (max-width:820px){
   body,body.panel-closed{--pw:0px;--rail-w:40px;--tap:40px} /* objetivo táctil ≥ 40 px */
   .dock,.shotbar{right:max(var(--gap), env(safe-area-inset-right,0px))}
-  body:not(.panel-closed) .fab{display:none} /* en móvil el panel cubre el botón: se cierra con la X del panel */
   #c{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none} /* el gesto es del canvas: ni scroll ni selección de la página */
 
   /* Dock compacto: una sola fila (cifra + acciones solo icono) y tira de miniaturas con scroll horizontal */
@@ -223,7 +218,7 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
     max-height:calc(100dvh - 3 * var(--gap) - var(--dock-h,0px) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
     overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
   body.dock-hidden .onb,body.dock-hidden .exp{max-height:calc(100dvh - 2 * var(--gap) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
-  body .onb .btn,body .onb-skip,body .exp .btn,body .exp-link,body .exp-seg button{min-height:var(--tap)}
+  body .onb .btn,body .onb-skip,body .exp .btn,body .exp-seg button{min-height:var(--tap)}
   .rec button{min-height:var(--tap);padding:0 12px}
 }
 /* Sin hover (táctil): ningún tooltip del rail, aunque el viewport sea ancho (tablet) */

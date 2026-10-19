@@ -1,7 +1,10 @@
-/* Avisos persistentes (pérdida de GPU, etc.): misma familia visual que .toast, pero se quedan hasta resolverse. Solo tokens. */
-.notice{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);display:flex;align-items:center;gap:var(--gap);
-  background:var(--ink);color:var(--paper-2);padding:8px 14px;font-size:11px;opacity:0;pointer-events:none;max-width:calc(100vw - 32px);
-  transition:opacity var(--dur) var(--ease),transform var(--dur) var(--ease);z-index:60}
-.notice.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
-.notice button{border:0;border-radius:8px;height:24px;padding:0 10px;background:var(--paper-2);color:var(--ink);cursor:pointer;font:inherit}
-.notice button:hover{background:var(--accent)}
+/* Avisos persistentes (pérdida de GPU, formato sin soporte…): misma familia visual que .toast (cards: Inter, --paper-2, sin bordes), pero se quedan
+   hasta resolverse. Arriba al centro, sin movimiento en Y (solo opacidad). Solo tokens. */
+.notice{position:fixed;left:50%;top:calc(var(--gap) + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;max-width:calc(100vw - 2 * var(--gap));
+  padding:9px 10px 9px 16px;border-radius:12px;background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));
+  color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;line-height:1.4;opacity:0;pointer-events:none;
+  transition:opacity 300ms cubic-bezier(.64,0,.78,0);z-index:49}
+.notice.on{opacity:1;pointer-events:auto;transition:opacity 400ms cubic-bezier(.22,.61,.36,1)}
+.notice button{border:0;border-radius:8px;height:28px;padding:0 12px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);cursor:pointer;font:inherit;transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
+@media (hover:hover){.notice button:hover{background:var(--ink);color:var(--paper-2)}}
+.notice button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}

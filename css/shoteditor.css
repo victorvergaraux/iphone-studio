@@ -11,7 +11,8 @@
 
 /* Deshacer / rehacer: botones icono sin borde (relleno tonal); deshabilitado = solo baja la opacidad. Tooltip data-tip: fade de opacidad */
 .se-ico{position:relative;align-self:center;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);cursor:pointer;transition:background var(--dur) var(--ease),opacity var(--dur) var(--ease)}
-.se-ico:hover:not(:disabled),.se-ico:focus-visible{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.se-ico:focus-visible{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+@media (hover:hover){.se-ico:hover:not(:disabled){background:color-mix(in srgb,var(--ink) 14%,transparent)}}
 .se-ico:disabled{opacity:.3;cursor:default}
 .se-ico svg{width:14px;height:14px}
 .se-ico[data-tip]::after{content:attr(data-tip);position:absolute;top:calc(100% + 6px);right:0;white-space:nowrap;pointer-events:none;padding:6px 8px;border-radius:8px;background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));font-family:var(--f-text);font-size:11px;font-weight:500;color:var(--ink);opacity:0;transition:opacity 250ms var(--ease);z-index:1}
@@ -22,14 +23,15 @@
 .se-list::-webkit-scrollbar{display:none}
 .se-empty{margin:0;padding:10px 8px;font-size:12px;line-height:1.5;color:var(--mute)}
 .se-row{position:relative;display:grid;grid-template-columns:24px 22px 1fr;align-items:center;gap:4px;height:40px;padding:0 6px 0 2px;border-radius:10px;transition:background var(--dur) var(--ease)}
-.se-row:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}
+@media (hover:hover){.se-row:hover{background:color-mix(in srgb,var(--ink) 5%,transparent)}}
 .se-row.on{background:color-mix(in srgb,var(--ink) 10%,transparent)}
 .se-row.drag{opacity:.45}
 .se-row.ins-b::before,.se-row.ins-a::after{content:"";position:absolute;left:4px;right:4px;height:2px;border-radius:1px;background:var(--ink);pointer-events:none}
 .se-row.ins-b::before{top:-2px}
 .se-row.ins-a::after{bottom:-2px}
 .se-grip{display:grid;place-items:center;width:24px;height:32px;padding:0;border:0;border-radius:8px;background:none;color:var(--mute);cursor:grab;touch-action:none}
-.se-grip:hover,.se-grip:focus-visible{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.se-grip:focus-visible{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+@media (hover:hover){.se-grip:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}}
 .se-grip:active{cursor:grabbing}
 .se-grip svg{width:14px;height:14px}
 .se-ord{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:-.02em;color:var(--mute);font-variant-numeric:tabular-nums}
@@ -51,14 +53,14 @@
 .se-row2{display:grid;grid-template-columns:48px 1fr 56px;align-items:center;gap:8px;min-height:28px}
 .se-row2.nog{grid-template-columns:48px 1fr}
 .se-sel{height:28px;min-width:0;width:100%;padding:0 8px;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
-.se-sel:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}
+@media (hover:hover){.se-sel:hover{background:color-mix(in srgb,var(--ink) 14%,transparent)}}
 .se-sel{cursor:pointer;appearance:auto}
 
 /* Botones: relleno tonal; el principal se rellena de tinta */
 .se-b{height:28px;padding:0 8px;border:0;border-radius:8px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background var(--dur) var(--ease),color var(--dur) var(--ease),opacity var(--dur) var(--ease)}
-.se-b:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}
+@media (hover:hover){.se-b:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}}
 .se-b.solid{background:var(--ink);color:var(--paper-2)}
-.se-b.solid:hover{background:color-mix(in srgb,var(--ink) 82%,var(--paper-2))}
+@media (hover:hover){.se-b.solid:hover{background:color-mix(in srgb,var(--ink) 82%,var(--paper-2))}}
 .se-b:disabled{opacity:.35;pointer-events:none}
 .se-g{padding:0 4px}
 .se-acts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
@@ -73,7 +75,7 @@
     max-height:calc(100dvh - 3 * var(--gap) - var(--dock-h,0px) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
     overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
   body.dock-hidden .se{max-height:calc(100dvh - 2 * var(--gap) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
-  body .se .se-b,body .se .se-ico,body .se .exp-link,body .se .se-tgl,body .se-sel,body .se .exp-rng{min-height:var(--tap)}
+  body .se .se-b,body .se .se-ico,body .se .se-tgl,body .se-sel,body .se .exp-rng{min-height:var(--tap)}
   body .se-grip{width:var(--tap)}
   body .se-row{grid-template-columns:var(--tap) 22px 1fr;height:48px}
   body .se-list{max-height:192px}
