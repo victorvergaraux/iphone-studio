@@ -3,7 +3,7 @@ import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { hooks } from '../core/hooks.js';
-import { CAM_EASES, SHOT_PRESETS, addShot, applyShotPreset, curShot, deleteShot, duplicateShot, flyTo, moveShot, renameShot, setShotTiming, shots, updateShot } from '../three/camera.js';
+import { CAM_EASES, SHOT_PRESETS, addShot, applyShotPreset, curShot, deleteShot, duplicateShot, flyTo, moveShot, playPresentation, presTL, renameShot, setShotTiming, shots, stopPresentation, updateShot } from '../three/camera.js';
 import { closeOnboarding, onboardingOpen } from './onboarding.js';
 import { closeExport, exportOpen } from './exportcard.js';
 import { canRedo, canUndo, record, redo, subscribe, undo } from '../core/history.js';
@@ -116,6 +116,7 @@ async function copyJson(){
 }
 function act(id, label, fn, cls = ''){ const b = mk('button', 'se-b ' + cls, label); b.type = 'button'; b.id = `se-${id}`; b.onclick = fn; A[id] = b; return b; }
 acts.append(
+  act('play', '', () => { presTL ? stopPresentation() : playPresentation(); }, 'se-wide se-play'),
   act('save', T.editor.saveCam, () => addShot(), 'solid se-wide'),
   act('upd', T.editor.update, () => updateShot()),
   act('dup', T.editor.duplicate, () => duplicateShot()),
@@ -132,6 +133,12 @@ acts.append(
   A.presetSel = sel;
   r.append(sel, act('preset', T.common.load, () => { sel.value = P.shots.preset; applyShotPreset(); })); acts.append(r);
 }
+// Play / stop de la cinemática dentro de la card: mismo estado que el botón del rail (strips.setPlayBtn avisa por hooks.shotEditorPlay)
+function syncPlay(on){
+  const b = A.play; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+  b.innerHTML = `<i data-lucide="${on ? 'square' : 'clapperboard'}"></i><span></span>`; b.querySelector('span').textContent = on ? T.rail.stopAria : T.rail.playAria; icons();
+}
+hooks.shotEditorPlay = syncPlay; syncPlay(!!presTL);
 function syncActs(){
   const on = !!shots[curShot];
   for (const k of ['upd', 'dup', 'ren', 'del']) A[k].disabled = !on;

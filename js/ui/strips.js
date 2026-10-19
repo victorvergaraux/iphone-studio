@@ -36,6 +36,7 @@ function setPlayBtn(on){
   const r = $('#railPlay'); if (!r) return;
   r.setAttribute('aria-pressed', String(!!on)); r.dataset.tip = on ? T.rail.stopTip : T.rail.playTip; r.setAttribute('aria-label', on ? T.rail.stopAria : T.rail.playAria);
   r.innerHTML = `<i data-lucide="${on ? 'square' : 'clapperboard'}"></i>`; icons();
+  hooks.shotEditorPlay?.(!!on); // botón «Reproducir cinemática» de la card
 }
 $('#railPlay')?.addEventListener('click', togglePres);
 export function setCarBtn(){ $('#scrPlay').innerHTML = `<i data-lucide="${carPlaying ? 'pause' : 'play'}"></i>`; $('#scrPlay').setAttribute('aria-label', carPlaying ? T.rail.pauseCar : T.rail.resumeCar); icons(); }

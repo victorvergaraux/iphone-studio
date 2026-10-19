@@ -1,9 +1,10 @@
 /* Editor de cinemática: hermano visual de la card de exportación (.exp) y del onboarding (.onb). Flota a la derecha del rail. Solo tokens.
    Sin bordes en controles: relleno tonal; el único filete de 1px (--line) es el separador de cabecera. Alto estable: el detalle
    de la toma reserva su espacio y solo cambia su opacidad al seleccionar. */
-.se{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:320px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));max-height:calc(100vh - 2 * var(--gap));overflow-y:auto;scrollbar-width:none;
+.se{position:fixed;z-index:22;top:calc(var(--gap) + env(safe-area-inset-top,0px));left:calc(max(var(--gap), env(safe-area-inset-left,0px)) + var(--rail-w) + var(--gap));width:320px;max-width:calc(100vw - 2 * var(--gap) - var(--rail-w) - var(--gap));max-height:calc(100vh - 3 * var(--gap) - var(--dock-h,0px));overflow-y:auto;scrollbar-width:none;
   padding:16px;border-radius:var(--radius);background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));display:grid;gap:14px;font-family:var(--f-text);color:var(--ink)}
 .se[hidden]{display:none}
+body.dock-hidden .se{max-height:calc(100vh - 2 * var(--gap))} /* sin dock, toda la altura; con dock la card nunca lo pisa (scroll interno) */
 .se::-webkit-scrollbar{display:none}
 .se-head{display:flex;align-items:baseline;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
 .se-count{font-family:var(--f-display);font-weight:800;font-size:46px;line-height:.9;letter-spacing:-.05em;margin-left:-2px;font-variant-numeric:tabular-nums}
@@ -98,3 +99,10 @@
 .se-count2{width:72px}
 .se-count2 button:disabled{opacity:.35;pointer-events:none}
 .se-acts .se-wide2{grid-column:1 / -1}
+
+/* Reproducir / detener cinemática: acción primaria en --accent (igual que el Play del rail); reproduciendo = tinta con texto accent */
+.se-b.se-play{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;background:var(--accent);color:var(--ink)}
+.se-b.se-play.on{background:var(--ink);color:var(--accent)}
+.se-b.se-play svg{width:14px;height:14px;fill:none}
+.se-b.se-play.on svg{fill:currentColor}
+@media (hover:hover){.se-b.se-play:hover{background:color-mix(in srgb,var(--accent) 82%,var(--ink))}.se-b.se-play.on:hover{background:color-mix(in srgb,var(--ink) 82%,var(--paper-2))}}
