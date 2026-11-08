@@ -206,6 +206,11 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 .onb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto}
 .onb-acts:empty{display:none}
 .onb-nav{display:flex;justify-content:space-between;padding-top:12px;border-top:1px solid var(--line)}
+/* Firma (con enlace a victorvergara.co) fija en la card de introducción, alineada a la izquierda (visible en los 3 pasos; el alto de la card no cambia entre pasos) */
+.onb .onb-by{margin:0;font-family:var(--f-text);font-size:10px;font-weight:500;line-height:14px;letter-spacing:0;text-align:left;color:var(--mute)}
+.onb-by a{display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none;transition:color var(--dur) var(--ease)}
+.onb-by svg{width:12px;height:12px;flex:0 0 auto;stroke-width:1.6}
+@media (hover:hover){.onb-by a:hover{color:var(--ink);text-decoration:underline}}
 .btn:disabled{opacity:.3;pointer-events:none}
 
 .modal{position:fixed;inset:0;background:rgba(18,18,17,.6);display:grid;place-items:center;z-index:40;padding:16px}

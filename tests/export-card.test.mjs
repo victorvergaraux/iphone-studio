@@ -44,7 +44,7 @@ await run('export-card · formato, tipo y estimaciones', async ({ page, ok, eq, 
   await page.click('#expClose'); await wait(600);
   await page.click('#onbHelp'); await wait(900);
   const hs = [];
-  const chk = async (n) => { hs.push(await h('#onb')); ok(await page.evaluate(() => { const b = document.querySelector('#onbBody'); return b.scrollHeight <= b.clientHeight + 1; }), `paso ${n} del onboarding sin desbordar`); };
+  const chk = async (n) => { hs.push(await h('#onb')); ok(/by Victor Vergara/.test(await txt('#onb')) && await page.evaluate(() => { const e = document.querySelector('.onb-by'), a = e?.querySelector('a'), c = document.querySelector('#onb'); return !!a && e.getBoundingClientRect().height > 0 && getComputedStyle(e).textAlign === 'left' && a.href === 'https://www.victorvergara.co/' && a.target === '_blank' && /noopener/.test(a.rel) && !!a.querySelector('svg') && parseFloat(getComputedStyle(e).fontSize) <= 10 && a.firstElementChild.tagName.toLowerCase() === 'svg' && Math.abs(a.getBoundingClientRect().left - (c.getBoundingClientRect().left + 16)) < 2; }), `paso ${n}: leyenda «by Victor Vergara» a la izquierda y enlazada a victorvergara.co`); ok(await page.evaluate(() => { const b = document.querySelector('#onbBody'); return b.scrollHeight <= b.clientHeight + 1; }), `paso ${n} del onboarding sin desbordar`); };
   await chk(1);
   await page.click('#onbNext'); await wait(900); await chk(2);
   eq(await pressed('#onbFmt'), ['9:16'], 'onboarding muestra 9:16');
