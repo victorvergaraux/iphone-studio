@@ -7,7 +7,9 @@ import { refreshEdit } from '../ui/pane.js';
 import { addShot, renderStrip, togglePres } from '../ui/strips.js';
 import { applyEdit, syncScreens } from './store.js';
 import { toggleDock } from '../ui/dockToggle.js';
+import { toggleUI } from '../ui/uiToggle.js';
 import { suggestFor } from '../ui/device.js';
+import { hooks } from '../core/hooks.js';
 
 /* ───────────────────────── Carga: input, drag & drop, pegar ───────────────────────── */
 function fitToMax(img){
@@ -89,7 +91,8 @@ addEventListener('dragover', e => e.preventDefault());
 addEventListener('drop', e => { e.preventDefault(); dragN = 0; $('#drop').classList.remove('on'); loadFiles(e.dataTransfer.files); });
 addEventListener('paste', e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) loadFiles(f); });
 
-/* Atajos: Espacio = presentación, S = guardar toma, ←/→ = pantallas */
+/* Atajos: Espacio = reproducir/detener la cinemática · H = ocultar/mostrar toda la interfaz · G = guías · P = panel de pantallas
+   · S = guardar toma · ←/→ = pantallas */
 addEventListener('keydown', e => {
   if (e.target.closest('input, textarea, .tp-dfwv')) return;
   if (e.ctrlKey || e.metaKey || e.altKey) return; // Ctrl/Cmd/Alt+tecla = atajos del navegador (p. ej. Ctrl+S), no los nuestros
@@ -97,7 +100,9 @@ addEventListener('keydown', e => {
     if (e.target.closest('button')) return; // en un botón, Espacio ya hace su click: no disparar además la presentación
     e.preventDefault(); togglePres();
   }
-  else if (e.key === 'd' || e.key === 'D') toggleDock();
+  else if (e.key === 'p' || e.key === 'P') toggleDock();
+  else if (e.key === 'h' || e.key === 'H') toggleUI();
+  else if (e.key === 'g' || e.key === 'G') hooks.toggleGuides?.();
   else if (e.key === 's' || e.key === 'S') addShot();
   else if (e.key === 'ArrowRight') goTo(cur + 1);
   else if (e.key === 'ArrowLeft') goTo(cur - 1);

@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { DUR, EASE } from '../../core/utils.js';
 import { P } from '../../core/params.js';
+import { hooks } from '../../core/hooks.js';
 import { brushedTex, makeBrushed } from '../../three/metal.js';
 import { anchor, mFrame, makeButtons } from '../../three/iphone.js';
 import { mGlass, syncIsland } from '../../three/screen.js';
@@ -18,7 +19,7 @@ const FINISH_COLORS = { graphite:'#4a4a4c', natural:'#b4afa6', black:'#2c2c2e', 
 export function setupPhone({ pane }){
   const fP = pane.addFolder({ title:'Phone' });
   const [tBody, tGlass, tMetal, tMotion] = tabs(fP, 'Body', 'Glass', 'Metal', 'Motion');
-  tBody.addBinding(P.phone, 'pose', { label:'Pose', options:{ 'Lean':'lean', 'Flat':'flat', 'Float':'float' } }).on('change', e => setPose(e.value));
+  tBody.addBinding(P.phone, 'pose', { label:'Pose', options:{ 'Lean':'lean', 'Flat':'flat', 'Float':'float' } }).on('change', e => { setPose(e.value); hooks.shotEditorRefresh?.(); }); // la card «Cinemática» repinta su selector de pose
   tBody.addBinding(P.phone, 'yaw', { label:'Yaw', min:-180, max:180, step:1 }).on('change', e => gsap.to(anchor.rotation, { y:THREE.MathUtils.degToRad(e.value), duration:DUR, ease:EASE, overwrite:true }));
   tBody.addBinding(P.phone, 'y', { label:'Y', min:-0.6, max:1.5, step:0.005 });
   tBody.addBinding(P.phone, 'radius', { label:'Radius', min:0.04, max:0.33, step:0.005 }).on('change', rebuildShape);

@@ -22,11 +22,11 @@ await run('rail · orden, título, dock oculto y sin Play', async ({ page, ok, e
   ok(await page.evaluate(() => document.body.classList.contains('ui-ready')), 'las transiciones se activan tras la carga (ui-ready)');
   eq(await page.evaluate(async () => (await import('/js/core/params.js')).P.ui.dock), false, 'P.ui.dock = false por defecto');
 
-  // Mostrarlo con el botón y con la tecla D
+  // Mostrarlo con el botón y con la tecla P
   await openDock(page);
   eq(await page.evaluate(() => getComputedStyle(document.querySelector('.dock')).visibility), 'visible', 'el botón del rail muestra el dock');
-  await page.keyboard.press('d'); await wait(1500);
-  ok(await page.evaluate(() => document.body.classList.contains('dock-hidden')), 'la tecla D lo vuelve a ocultar');
+  await page.keyboard.press('p'); await wait(1500);
+  ok(await page.evaluate(() => document.body.classList.contains('dock-hidden')), 'la tecla P lo vuelve a ocultar');
 });
 
 // El estado guardado manda: si el usuario lo dejó visible, aparece directamente al cargar (sin deslizarse).

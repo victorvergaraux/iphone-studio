@@ -20,6 +20,8 @@ await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, 
   const expInfo = await page.evaluate(() => { const b = document.querySelector('#expClose'); return [b.textContent.trim(), !!b.querySelector('svg'), b.getAttribute('aria-label')]; });
   eq(expInfo, ['', true, 'Cerrar'], 'expClose = icono X sin texto y con aria-label');
 
+  eq(await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent)), ['Global'], 'pestaña inicial: Global');
+  await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].find(b => b.textContent === 'Toma').click()); await page.waitForTimeout(250); // la pestaña inicial es Global
   // ── Pestaña «Toma»: sliders Move/Hold ──
   await page.click('.se-row[data-i="1"] .se-main'); await wait(300);
   const types = await page.evaluate(() => ['#se-move', '#se-hold'].map(s => document.querySelector(s).type));
@@ -63,6 +65,17 @@ await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, 
   eq(await page.evaluate(() => [...document.querySelector('.se-row').querySelectorAll('.se-ri')].map(b => b.dataset.act)), ['upd', 'dup', 'ren', 'del'], 'cada fila trae actualizar · duplicar · renombrar · eliminar');
   ok(await page.evaluate(() => document.querySelector('#se-presetSel').getBoundingClientRect().bottom <= document.querySelector('#se-play').getBoundingClientRect().top), 'el selector de presets va antes del botón de reproducir');
   eq(await page.evaluate(() => document.querySelector('#railShots svg')?.getAttribute('class')?.includes('clapperboard')), true, 'el rail usa el icono de película (clapperboard), el mismo de Reproducir cinemática');
+
+  // ── Nuevos ajustes: Guardar cámara tras las tomas · poses con icono · sliders sin outline ──
+  ok(await page.evaluate(() => { const r = id => document.querySelector(id).getBoundingClientRect(); return r('#seList').bottom <= r('#se-save').top && r('#se-save').bottom <= r('#sePoses').top && r('#sePoses').bottom <= r('#seDetail').top; }), 'orden: tomas → Guardar cámara → poses → detalle');
+  eq(await page.evaluate(() => [...document.querySelectorAll('#sePoses .se-pose')].map(b => [b.textContent, !!b.querySelector('svg')])), [['Inclinado', true], ['Acostado', true], ['Flotante', true]], 'tres poses con icono, en horizontal');
+  ok(await page.evaluate(() => { const r = [...document.querySelectorAll('#sePoses .se-pose')].map(b => b.getBoundingClientRect().top); return r.every(t => Math.abs(t - r[0]) < 1); }), 'las poses están en una sola fila');
+  eq(await page.evaluate(async () => (await import('/js/core/params.js')).P.phone.pose), 'lean', 'pose por defecto: Lean');
+  await page.click('#se-pose-flat'); await wait(400);
+  eq(await page.evaluate(async () => [(await import('/js/core/params.js')).P.phone.pose, document.querySelector('#se-pose-flat').getAttribute('aria-pressed'), document.querySelector('#se-pose-lean').getAttribute('aria-pressed')]), ['flat', 'true', 'false'], 'elegir Acostado cambia P.phone.pose y el estado de los botones');
+  await page.evaluate(async () => { const { P } = await import('/js/core/params.js'); const { setPose } = await import('/js/three/smudge.js'); P.phone.pose = 'lean'; setPose('lean', true); });
+  const rng = await page.evaluate(() => { const r = document.querySelector('#se-g-hold'), c = getComputedStyle(r); return { appearance: c.appearance, outline: c.outlineStyle, p: r.style.getPropertyValue('--p') }; });
+  ok(rng.appearance === 'none' && (rng.outline === 'none' || rng.outline === 'auto' && false) && /%$/.test(rng.p), `sliders sin aspecto nativo ni outline, con tramo relleno (${JSON.stringify(rng)})`);
 
   // ── La card nunca pisa el dock (con el botón nuevo es más alta: scroll interno si no cabe) ──
   await openDock(page); await wait(300);

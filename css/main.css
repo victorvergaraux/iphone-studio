@@ -2,7 +2,7 @@
 html,body{height:100%}
 body{--gap:12px;--radius:18px;--rail-w:36px;--pw:calc(312px + var(--gap));--dev-w:200px;--thumb-w:44px;--thumb-ar:9/19.5;margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-mono);font-size:12px;overflow:hidden}
 body.panel-closed{--pw:0px}
-body.dev-tablet{--thumb-w:127px;--thumb-ar:4/3} /* miniaturas del dock con la proporción del modelo activo (mismo alto: el dock no cambia de altura) */
+body.dev-tablet{--thumb-w:152px;--thumb-ar:16/10} /* miniaturas del dock con la proporción del modelo activo (mismo alto: el dock no cambia de altura) */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit}
@@ -11,6 +11,13 @@ button{font:inherit;color:inherit}
 /* Canvas = fondo fijo a pantalla completa. Toda la UI flota encima. */
 #c{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;background:var(--paper)}
 body.recording .ui{opacity:0;visibility:hidden;pointer-events:none}
+/* Tecla H (js/ui/uiToggle.js): oculta toda la interfaz con un fundido de opacidad (sin movimiento). La animación termina en opacity:0 + visibility:hidden;
+   `ui-showing` hace el fundido de entrada al volver. Con movimiento reducido no hay animación: se oculta/muestra de golpe. */
+body.ui-hidden .ui{pointer-events:none;animation:ui-out 300ms cubic-bezier(.64,0,.78,0) forwards}
+body.ui-showing .ui{animation:ui-in 400ms cubic-bezier(.22,.61,.36,1)}
+@keyframes ui-out{to{opacity:0;visibility:hidden}}
+@keyframes ui-in{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){body.ui-hidden .ui{opacity:0!important;visibility:hidden!important}}
 body.recording .guide,body.recording .grid3,body.recording .gstroke{display:none}
 
 /* Barra de progreso de exportación: 2px en el borde inferior, visible incluso con la UI oculta */
@@ -126,7 +133,7 @@ body.dock-hidden .devsw{transform:translateY(calc(100% + 2 * var(--gap) + 8px));
   background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;
   transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
 .dev-opt svg{width:22px;height:22px;stroke-width:1.6}
-.dev-opt .dev-land{transform:rotate(90deg)} /* el icono de tablet es vertical; el modelo es un iPad horizontal */
+.dev-opt .dev-land{transform:rotate(90deg)} /* el icono de tablet es vertical; el modelo es una pantalla horizontal */
 @media (hover:hover){.dev-opt:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}}
 .dev-opt[aria-pressed="true"]{background:var(--ink);color:var(--paper-2)}
 .dev-opt[data-suggest]:not([aria-pressed="true"]){background:var(--accent);color:var(--ink)} /* la opción sugerida se marca con el acento */
@@ -239,7 +246,7 @@ body.has-notice .toast{top:calc(var(--gap) + 52px + env(safe-area-inset-top,0px)
   .strip{gap:8px;padding:4px 0 4px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:none}
   .strip::-webkit-scrollbar{display:none}
   body{--thumb-w:40px}
-  body.dev-tablet{--thumb-w:115px}
+  body.dev-tablet{--thumb-w:138px}
 
   /* Rail: botones táctiles */
   .rail .btn{width:var(--rail-w);height:var(--rail-w)}

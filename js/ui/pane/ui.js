@@ -6,9 +6,20 @@ import { T } from '../../core/strings.js';
 import { resetAll } from '../../core/persist.js';
 import { exportProject } from '../../export/project.js';
 import { reset as resetHistory } from '../../core/history.js';
+import { hooks } from '../../core/hooks.js';
 import { row } from './shared.js';
 
 const UI_TMP = { guideDim:0.8, showGrid:true, showFrame:true };
+
+// Tecla G: muestra u oculta las guías a la vez (retícula de tercios + marco/dimmer). Si alguna se ve, se ocultan las dos; si no, se muestran las dos.
+// Mantiene los interruptores Grid / Frame del panel sincronizados.
+function toggleGuides(){
+  const on = !(UI_TMP.showGrid || UI_TMP.showFrame);
+  UI_TMP.showGrid = UI_TMP.showFrame = on;
+  document.body.classList.toggle('no-grid', !on); document.body.classList.toggle('no-frame', !on);
+  hooks.refreshPane?.();
+}
+hooks.toggleGuides = toggleGuides;
 
 export function setupUI({ pane }){
   const fUI = pane.addFolder({ title:'UI' });

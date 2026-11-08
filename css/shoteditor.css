@@ -20,7 +20,7 @@ body.dock-hidden .se{max-height:calc(100vh - 2 * var(--gap))} /* sin dock, toda 
 @media (hover:hover){.se-ico[data-tip]:hover:not(:disabled)::after,.se-ico[data-tip]:focus-visible::after{opacity:1;transition-delay:300ms}}
 
 /* Lista: filas de alto fijo (40 px), scroll interno */
-.se-list{display:grid;gap:2px;align-content:start;max-height:216px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.se-list{display:grid;gap:2px;align-content:start;max-height:170px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
 .se-list::-webkit-scrollbar{display:none}
 .se-empty{margin:0;padding:10px 8px;font-size:12px;line-height:1.5;color:var(--mute)}
 .se-row{position:relative;display:grid;grid-template-columns:24px 22px minmax(0,1fr) auto;align-items:center;gap:4px;height:40px;padding:0 6px 0 2px;border-radius:10px;transition:background var(--dur) var(--ease)}
@@ -49,6 +49,16 @@ body.dock-hidden .se{max-height:calc(100vh - 2 * var(--gap))} /* sin dock, toda 
 .se-row.on .se-ri{color:var(--ink)}
 .se-ri:focus-visible{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
 @media (hover:hover){.se-ri:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 10%,transparent)}}
+
+/* «Guardar cámara» justo bajo la lista de tomas */
+.se-save{display:grid}
+.se-save .se-wide{height:36px}
+/* Pose (Lean · Flat · Float): tres opciones horizontales con icono, mismo lenguaje que el selector «Modelo» del dock */
+.se-poses{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.se-pose{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:56px;padding:0;border:0;border-radius:12px;cursor:pointer;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
+.se-pose svg{width:22px;height:22px}
+@media (hover:hover){.se-pose:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}}
+.se-pose[aria-pressed="true"]{background:var(--ink);color:var(--paper-2)}
 
 /* Detalle de la toma seleccionada (alto reservado: sin saltos al seleccionar) */
 .se-detail{display:grid;gap:8px;align-content:start;min-height:252px;padding-top:12px;border-top:1px solid var(--line)}
@@ -99,6 +109,18 @@ body.dock-hidden .se{max-height:calc(100vh - 2 * var(--gap))} /* sin dock, toda 
 .se-val{flex:0 0 auto;min-width:40px;text-align:right;font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
 .exp-sl.glob .se-val{color:var(--mute)}
 .exp-sl.glob .exp-rng{opacity:.55}
+/* Sliders de la card de cinemática: sin outline ni aspecto nativo. Pista de 4 px con más contraste (tinta al 22 % sobre el papel) y tramo relleno en tinta
+   hasta el valor (--p, lo pinta shoteditor.js); la perilla es un círculo de tinta. El foco de teclado se ve en la perilla (anillo), no con outline. */
+.se .exp-rng{-webkit-appearance:none;appearance:none;background:transparent;outline:none;border:0;cursor:pointer;--p:0%}
+.se .exp-rng:focus,.se .exp-rng:focus-visible{outline:none}
+.se .exp-rng::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--ink) var(--p),color-mix(in srgb,var(--ink) 22%,var(--paper-2)) var(--p))}
+.se .exp-rng::-moz-range-track{height:4px;border-radius:2px;background:color-mix(in srgb,var(--ink) 22%,var(--paper-2))}
+.se .exp-rng::-moz-range-progress{height:4px;border-radius:2px;background:var(--ink)}
+.se .exp-rng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:var(--ink);transition:box-shadow var(--dur) var(--ease)}
+.se .exp-rng::-moz-range-thumb{width:14px;height:14px;border:0;border-radius:50%;background:var(--ink)}
+.se .exp-rng:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px color-mix(in srgb,var(--ink) 18%,transparent)}
+.se .exp-rng:focus-visible::-moz-range-thumb{box-shadow:0 0 0 4px color-mix(in srgb,var(--ink) 18%,transparent)}
+
 
 /* Interruptor (Loop / Random): pista + perilla, sin borde; encendido = pista en tinta */
 .se-tgl{display:inline-flex;align-items:center;width:40px;height:28px;padding:0;border:0;background:none;cursor:pointer}

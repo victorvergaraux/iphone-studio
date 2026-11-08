@@ -12,7 +12,8 @@ await run('carrusel · el scroll baja y vuelve a subir', async ({ page, ok, boot
     const t0 = performance.now(), it = c.items[c.cur];
     window.__iv = setInterval(() => window.__samples.push([Math.round(performance.now() - t0), +it.scroll.toFixed(3)]), 100);
   });
-  await page.waitForTimeout(4500);
+  // espera (hasta 20 s: el software GL va lento bajo carga) a ver bajar y volver a subir
+  await page.waitForFunction(() => { const s = window.__samples, m = Math.max(...s.map(x => x[1])); return m > 0.95 && s[s.length - 1][1] < 0.02; }, null, { timeout: 20000, polling: 200 }).catch(() => {});
   const s = await page.evaluate(() => { clearInterval(window.__iv); return window.__samples; });
   const max = Math.max(...s.map(x => x[1])), iMax = s.findIndex(x => x[1] === max), after = s.slice(iMax);
   ok(max > 0.95, `baja hasta el final (máx ${max})`);

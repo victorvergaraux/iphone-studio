@@ -6,19 +6,22 @@ import { makeBrushed } from './metal.js';
 /* ───────────────────────── iPhone / iPad procedural ───────────────────────── */
 /* Unidades: 1 = 100 mm. Dos modelos con la misma construcción, solo cambian las medidas (`P.phone.device`):
    · phone  — cuerpo 70.6 × 146.6 × 8.25 mm (iPhone Pro 6.1"), vertical.
-   · tablet — tipo iPad Pro 13" en horizontal (proporción 4:3), a escala ≈ 0.62 para que las tomas de cámara existentes sigan encuadrando.
+   · tablet — pantalla tipo MacBook Pro (16:10; relación de la pantalla Liquid Retina XDR ≈ 1.55) en horizontal, a escala ≈ 0.54, sin botones laterales; marco simétrico fino
+     (cuerpo 1.92 × 1.27 → pantalla 1.852 × 1.202 = 1.541). El modelo se sigue llamando «tablet» (clave de P.phone.device) aunque ahora sea una pantalla de laptop.
    Bisel del teléfono al 50 %: 0.017 por lado → pantalla grande, bordes finos tipo 16 Pro.
    Radio de pantalla = radio del cuerpo − bisel → el marco negro mantiene grosor constante en las esquinas.
-   B = bisel del extrude · INSET = margen del panel frontal dentro del cuerpo · rK = factor del radio editable (P.phone.radius) · camK = factor de distancia de las tomas preset (la tablet es mucho más ancha). */
+   B = bisel del extrude · INSET = margen del panel frontal dentro del cuerpo · rK = factor del radio editable (P.phone.radius) · camK = factor de distancia de las tomas preset (la tablet es mucho más ancha) · z = altura de las capas del frente sobre la cara del cuerpo
+   [panel, pantalla, isla, vidrio] (ver más abajo). */
 export const DEVICES = {
-  phone:  { PW:0.706, PH:1.466, PD:0.0825, PR:0.18, BEZEL:0.017, B:0.022, INSET:0.015, rK:1, camK:1 },
-  tablet: { PW:1.76,  PH:1.35,  PD:0.05,   PR:0.14, BEZEL:0.04,  B:0.014, INSET:0.012, rK:0.78, camK:1.6 },
+  phone:  { PW:0.706, PH:1.466, PD:0.0825, PR:0.18, BEZEL:0.017, B:0.022, INSET:0.015, rK:1, camK:1, z:[0.0002, 0.0004, 0.0006, 0.001] },
+  tablet: { PW:1.92,  PH:1.27,  PD:0.045,  PR:0.08, BEZEL:0.034, B:0.014, INSET:0.012, rK:0.45, camK:1.75, z:[0.001, 0.002, 0.003, 0.004] },
 };
 // Medidas vigentes. Son bindings vivos (`export let`): setDims() los reasigna y todos los módulos que los importan ven el valor nuevo.
-export let PW, PH, PD, PR, BEZEL, B, INSET, RK, CAM_K, SW, SH, SR, S_ASPECT, FPW, FPH, FPR;
+export let PW, PH, PD, PR, BEZEL, B, INSET, RK, CAM_K, SW, SH, SR, S_ASPECT, FPW, FPH, FPR, Z_FRONT, Z_SCREEN, Z_ISLAND, Z_GLASS;
 export function setDims(name){
   const d = DEVICES[name] || DEVICES.phone;
   ({ PW, PH, PD, PR, BEZEL, B, INSET, rK: RK, camK: CAM_K } = d);
+  [Z_FRONT, Z_SCREEN, Z_ISLAND, Z_GLASS] = d.z;
   SW = PW - 2 * BEZEL; SH = PH - 2 * BEZEL; SR = PR - BEZEL; S_ASPECT = SW / SH;
   FPW = PW - 2 * INSET; FPH = PH - 2 * INSET; FPR = PR - INSET; // panel frontal dentro del bisel
 }
@@ -66,11 +69,11 @@ export const body = new THREE.Mesh(bodyGeo, mFrame); body.castShadow = body.rece
 
 const mBlack = new THREE.MeshPhysicalMaterial({ color:0x050505, roughness:0.18, metalness:0, clearcoat:1, envMapIntensity:0.6 });
 export const front = new THREE.Mesh(rrPlane(FPW, FPH, FPR), mBlack);
-/* Capas del frente (z sobre la cara del cuerpo). El vidrio va a +0.001, así que todo lo de abajo se comprime
-   por debajo: panel +0.0002 · pantalla +0.0004 · isla +0.0006 · vidrio +0.001.
-   Con gaps tan finos el depth buffer solo no alcanza a distancia; se suma polygonOffset escalonado
-   (sesgo de profundidad en GPU) para que cada capa gane siempre a la de abajo, sin z-fighting. */
-export const Z_FRONT = 0.0002; export const Z_SCREEN = 0.0004, Z_ISLAND = 0.0006, Z_GLASS = 0.001;
+/* Capas del frente (z sobre la cara del cuerpo), según el modelo (DEVICES[…].z):
+   · phone  — panel +0.0002 · pantalla +0.0004 · isla +0.0006 · vidrio +0.001 (todo comprimido bajo el vidrio).
+   · tablet — panel +0.001 · pantalla +0.002 · isla +0.003 · vidrio +0.004: un escalón de 0.001 por capa. La tablet es mucho más grande y la
+     cámara se aleja más (camK), así que con gaps de 0.0002 el depth buffer mezclaba el borde del cuerpo con la imagen (z-fighting).
+   Además de la separación se suma polygonOffset escalonado (sesgo de profundidad en GPU) para que cada capa gane siempre a la de abajo. */
 export const depthBias = (m, n) => Object.assign(m, { polygonOffset:true, polygonOffsetFactor:-n, polygonOffsetUnits:-n * 4 });
 front.position.z = PD/2 + Z_FRONT; phone.add(front);
 export const back = new THREE.Mesh(rrPlane(FPW, FPH, FPR), new THREE.MeshPhysicalMaterial({ color:0x2b2b2d, roughness:0.55, metalness:0.1, envMapIntensity:0.6 }));
@@ -100,7 +103,7 @@ export function smoothNormals(g){
    P.phone.btnDepth: sutiles pero con borde que atrapa el reflejo. */
 // [largo, posición, lado]: lado ±1 = canto derecho/izquierdo (posición = y) · lado 0 = canto superior (posición = x)
 const buttonSpec = () => P.phone.device === 'tablet'
-  ? [[0.16, PW / 2 - 0.34, 0], [0.12, PH / 2 - 0.3, 1], [0.12, PH / 2 - 0.46, 1]]   // encendido arriba · volumen +/− en el canto derecho
+  ? []   // pantalla de laptop: sin botones laterales
   : [[0.06, 0.42, -1], [0.11, 0.27, -1], [0.11, 0.12, -1], [0.17, 0.26, 1]];
 let btnMeshes = [];
 export function makeButtons(){

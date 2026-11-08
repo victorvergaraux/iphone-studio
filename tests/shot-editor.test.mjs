@@ -23,6 +23,8 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
 
   // ── Abrir / cerrar y exclusión mutua ──
   await page.click('#railShots'); await wait(1300);
+  eq(await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent)), ['Global'], 'pestaña inicial: Global');
+  await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].find(b => b.textContent === 'Toma').click()); await page.waitForTimeout(250); // la pestaña inicial es Global
   ok(!(await hidden('#shotEditor')) && (await page.getAttribute('#railShots', 'aria-expanded')) === 'true', 'se abre con el rail');
   eq(await page.textContent('#seCount'), '04', 'cifra = nº de tomas (preset base: 4)');
   eq(await page.evaluate(() => document.querySelectorAll('.se-row').length), 4, '4 filas');

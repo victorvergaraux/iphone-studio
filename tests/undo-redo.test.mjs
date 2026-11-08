@@ -22,6 +22,7 @@ await run('undo-redo · tomas, ajustes, atajos, tope y botones', async ({ page, 
   await ev('H.reset()');
   eq(await hinfo(), { len:1, idx:0, u:false, r:false }, 'historial limpio tras reset');
   await page.click('#railShots'); await wait(1300);
+  await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].find(b => b.textContent === 'Toma').click()); await page.waitForTimeout(250); // la pestaña inicial es Global
   eq(await page.evaluate(() => [document.querySelector('#seUndo').disabled, document.querySelector('#seRedo').disabled, document.querySelector('#seUndo').getAttribute('aria-label'), document.querySelector('#seRedo').getAttribute('aria-label')]), [true, true, 'Deshacer', 'Rehacer'], 'botones deshabilitados y con aria-label');
 
   // ── Tomas: añadir ──

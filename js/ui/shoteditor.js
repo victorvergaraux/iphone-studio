@@ -4,6 +4,7 @@ import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { hooks } from '../core/hooks.js';
 import { camera } from '../three/renderer.js';
+import { setPose } from '../three/smudge.js';
 import { CAM_EASES, SHOT_PRESETS, addShot, applyShotPreset, curShot, deleteShot, duplicateShot, flyTo, moveShot, playPresentation, presTL, renameShot, setShotTiming, shots, stopPresentation, updateShot } from '../three/camera.js';
 import { closeOnboarding, onboardingOpen } from './onboarding.js';
 import { closeExport, exportOpen } from './exportcard.js';
@@ -27,16 +28,18 @@ let lastSel = -2;
 /* ── Detalle (alto fijo): pestañas «Toma» (overrides de la toma seleccionada) y «Global» (ritmo de toda la cinemática) ──
    Move y Hold son sliders (mismos rangos que tenía el panel: Move 0–8 s con 0 = corte seco, Hold 0–6 s). En «Toma» un slider sin
    override muestra el valor global (atenuado); al moverlo se fija el override y «Global» lo quita. El cambio se confirma al soltar. */
-let tab = 'shot';
+let tab = 'global'; // pestaña inicial: Global (la primera)
 const fmtMove = v => (+v < 0.01 ? T.editor.corte : secs(v));
 const fields = {}, gfields = {};
 const tabsEl = mk('div', 'exp-seg se-tabs'); tabsEl.setAttribute('role', 'group'); tabsEl.setAttribute('aria-label', T.editor.tabsAria);
 const tabBtns = {};
 for (const [k, l] of [['global', T.common.global], ['shot', T.common.shot]]) { const b = mk('button', '', l); b.type = 'button'; b.onclick = () => { tab = k; syncDetail(); }; tabsEl.append(b); tabBtns[k] = b; }
+// Tramo relleno de la pista (CSS: --p) = posición del valor dentro del rango
+const paint = r => r.style.setProperty('--p', `${((r.value - r.min) / (r.max - r.min || 1)) * 100}%`);
 function sliderCtl(id, label, min, max, step, fmt, onInput, onChange){
   const wrap = mk('div', 'exp-sl'), rng = mk('input', 'exp-rng'), val = mk('output', 'se-val');
   rng.type = 'range'; rng.min = min; rng.max = max; rng.step = step; rng.id = id; rng.setAttribute('aria-label', label);
-  rng.oninput = () => { val.textContent = fmt(rng.value); onInput?.(+rng.value); };
+  rng.oninput = () => { val.textContent = fmt(rng.value); paint(rng); onInput?.(+rng.value); };
   rng.onchange = () => onChange(+rng.value);
   wrap.append(rng, val); return { wrap, rng, val };
 }
@@ -106,6 +109,7 @@ function syncDetail(){
   // global
   for (const key of ['transition', 'hold']) { const c = gfields[key]; c.rng.value = P.shots[key]; c.val.textContent = (key === 'transition' ? fmtMove : secs)(P.shots[key]); }
   gfields.zoom.rng.value = P.cam.zoom; gfields.zoom.val.textContent = (+P.cam.zoom).toFixed(2) + '×';
+  card.querySelectorAll('.exp-rng').forEach(paint);
   gfields.loop.setAttribute('aria-checked', String(!!P.shots.loop)); gfields.random.setAttribute('aria-checked', String(!!P.shots.randomHalf));
   for (const [b, n] of gfields.count) { b.setAttribute('aria-pressed', String(P.shots.halfCount === n)); b.disabled = !P.shots.randomHalf; }
   if (lastSel !== curShot) { lastSel = curShot; if (on && isShot) { gsap.set(db, { opacity:.25 }); fade(db, 1, .5, 'power2.out'); } }
@@ -123,10 +127,25 @@ function act(id, label, fn, cls = ''){ const b = mk('button', 'se-b ' + cls, lab
   A.presetSel = sel;
   r.append(sel, act('preset', T.common.load, () => { sel.value = P.shots.preset; applyShotPreset(); })); acts.append(r);
 }
-acts.append(
-  act('play', '', () => { presTL ? stopPresentation() : playPresentation(); }, 'se-wide se-play'),
-  act('save', T.editor.saveCam, () => addShot(), 'solid se-wide'),
-);
+acts.append(act('play', '', () => { presTL ? stopPresentation() : playPresentation(); }, 'se-wide se-play'));
+$('#seSave').append(act('save', T.editor.saveCam, () => addShot(), 'solid se-wide')); // justo debajo de las tomas, antes de las poses
+
+/* ── Pose del aparato (la misma P.phone.pose de Phone › Body): tres opciones con icono, como el selector «Modelo» del dock ──
+   Pictogramas de perfil (línea de suelo + aparato) dibujados en SVG con el trazo de Lucide. */
+const POSE_SVG = {
+  lean:  '<path d="M3 21h18"/><rect x="8" y="1.5" width="8.5" height="17" rx="1.6" transform="rotate(32 12 20)"/>',
+  flat:  '<path d="M3 21h18"/><rect x="2.5" y="12.5" width="19" height="5.5" rx="1.6"/>',
+  float: '<path d="M3 21h18" stroke-dasharray="2 3"/><rect x="2.5" y="5.5" width="19" height="5.5" rx="1.6" transform="rotate(-8 12 8)"/>',
+};
+const poseBtns = {};
+for (const k of Object.keys(POSE_SVG)) {
+  const b = mk('button', 'se-pose'); b.type = 'button'; b.id = `se-pose-${k}`;
+  b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${POSE_SVG[k]}</svg><span></span>`;
+  b.querySelector('span').textContent = T.editor.poses[k];
+  b.onclick = () => { if (P.phone.pose === k) return; P.phone.pose = k; setPose(k); saveSoon(); hooks.refreshPane?.(); record(T.history.adjust('Pose'), { key:'phone/pose' }); syncPoses(); };
+  poseBtns[k] = b; $('#sePoses').append(b);
+}
+function syncPoses(){ for (const [k, b] of Object.entries(poseBtns)) b.setAttribute('aria-pressed', String(P.phone.pose === k)); }
 // Play / stop de la cinemática dentro de la card: mismo estado que el botón del rail (strips.setPlayBtn avisa por hooks.shotEditorPlay)
 function syncPlay(on){
   const b = A.play; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
@@ -134,6 +153,7 @@ function syncPlay(on){
 }
 hooks.shotEditorPlay = syncPlay; syncPlay(!!presTL);
 function syncActs(){
+  syncPoses();
   if (A.presetSel.value !== P.shots.preset) A.presetSel.value = P.shots.preset;
 }
 

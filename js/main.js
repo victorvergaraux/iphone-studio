@@ -21,6 +21,7 @@ import './ui/strips.js';
 import './ui/shotbar.js';
 import './ui/touch.js';
 import './ui/dockToggle.js';
+import './ui/uiToggle.js';
 import './ui/device.js';
 import './ui/onboarding.js';
 import './ui/exportcard.js';

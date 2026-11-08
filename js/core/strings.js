@@ -51,6 +51,7 @@ export const T = {
     gripAria: n => `Mover toma ${pad2(n)}: arrastra o usa flechas arriba y abajo`,
     nameAria: n => `Nombre de la toma ${pad2(n)}`,
     saveCam: 'Guardar cámara', update: 'Actualizar', duplicate: 'Duplicar', rename: 'Renombrar',
+    poses: { lean: 'Inclinado', flat: 'Acostado', float: 'Flotante' }, posesAria: 'Pose del aparato',
     remove: 'Eliminar', rowAria: (label, n) => `${label} toma ${pad2(n)}`,
     undoTip: 'Deshacer · Ctrl+Z', redoTip: 'Rehacer · Ctrl+Shift+Z',
   },
@@ -79,7 +80,7 @@ export const T = {
       tablet: 'Esta pantalla es horizontal: se ve mejor en Tablet',
       phone: 'Esta pantalla es vertical: se ve mejor en Celular',
     },
-    hintHidden: 'Esta pantalla no encaja con el modelo actual: abre Pantallas (D) y cambia de modelo',
+    hintHidden: 'Esta pantalla no encaja con el modelo actual: abre Pantallas (P) y cambia de modelo',
     history: 'cambiar modelo',
   },
 
