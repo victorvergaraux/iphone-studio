@@ -8,7 +8,7 @@ import { DUR, EASE } from '../../core/utils.js';
 import { P } from '../../core/params.js';
 import { brushedTex, makeBrushed } from '../../three/metal.js';
 import { anchor, mFrame, makeButtons } from '../../three/iphone.js';
-import { island, mGlass } from '../../three/screen.js';
+import { mGlass, syncIsland } from '../../three/screen.js';
 import { applySmudgeScale, rebuildShape, setPose, smudgeU } from '../../three/smudge.js';
 import { tabs, isSyncing } from './shared.js';
 
@@ -24,7 +24,7 @@ export function setupPhone({ pane }){
   tBody.addBinding(P.phone, 'radius', { label:'Radius', min:0.04, max:0.33, step:0.005 }).on('change', rebuildShape);
   tBody.addBinding(P.phone, 'btnDepth', { label:'Buttons', min:0.001, max:0.02, step:0.0005 }).on('change', makeButtons);
   tBody.addBlade({ view:'separator' });
-  tBody.addBinding(P.phone, 'island', { label:'Island' }).on('change', e => island.visible = e.value);
+  tBody.addBinding(P.phone, 'island', { label:'Island' }).on('change', syncIsland);
   tBody.addBinding(P.phone, 'islandW', { label:'Width', min:0.08, max:0.34, step:0.005 }).on('change', rebuildShape);
   tBody.addBinding(P.phone, 'islandR', { label:'Round', min:0.05, max:1, step:0.01 }).on('change', rebuildShape);
 

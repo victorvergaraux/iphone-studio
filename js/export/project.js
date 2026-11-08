@@ -7,7 +7,8 @@ import { bgColor, blocksG, catcher, ground, mAccent, mBlocks, mFloor, applyFloor
 import { applyBackground, applyEnvIntensity, loadEnv } from '../three/hdri.js';
 import { makeBrushed } from '../three/metal.js';
 import { anchor, mFrame, makeButtons } from '../three/iphone.js';
-import { applyTransitionMode, island, mGlass, screenMat } from '../three/screen.js';
+import { applyTransitionMode, mGlass, screenMat, syncIsland } from '../three/screen.js';
+import { syncDevice } from '../ui/device.js';
 import { applySmudgeScale, prop, rebuildShape, setPose, smudgeU } from '../three/smudge.js';
 import { resetCarousel, scheduleCar } from '../screens/carousel.js';
 import { sanitizeShot, flyTo, playPresentation, presentationLength, setCurShot, setShots, shots, stopPresentation } from '../three/camera.js';
@@ -96,13 +97,14 @@ export async function applyAll({ cam = true } = {}){
   renderer.toneMapping = { neutral:THREE.NeutralToneMapping, agx:THREE.AgXToneMapping, aces:THREE.ACESFilmicToneMapping }[P.env.tone] ?? THREE.NeutralToneMapping;
   sun.castShadow = P.shadow.on; sun.intensity = P.shadow.strength; sun.shadow.radius = P.shadow.size;
   gtao.blendIntensity = P.shadow.ao; gtao.updateGtaoMaterial({ radius:P.shadow.aoRadius });
+  syncDevice({ cam }); // modelo celular/tablet: antes de la pose y de las geometrías (solo actúa si cambió)
   setPose(P.phone.pose); prop.visible = P.phone.pose === 'lean' && P.scene.showBlocks;
   gsap.to(anchor.rotation, { y:THREE.MathUtils.degToRad(P.phone.yaw), duration:DUR, ease:EASE, overwrite:true });
-  mGlass.envMapIntensity = P.phone.glass * 1.6; mGlass.roughness = P.phone.glassRough; island.visible = P.phone.island;
+  mGlass.envMapIntensity = P.phone.glass * 1.6; mGlass.roughness = P.phone.glassRough;
   smudgeU.uSmudgeR.value = P.phone.smudgeR; smudgeU.uSmudgeM.value = P.phone.smudgeM; smudgeU.uSmudgeH.value = P.phone.smudgeH; applySmudgeScale();
   mFrame.color.set(P.phone.frame); mFrame.roughness = P.metal.rough; mFrame.metalness = P.metal.metal;
   mFrame.anisotropy = P.metal.aniso; mFrame.anisotropyRotation = THREE.MathUtils.degToRad(P.metal.angle);
-  rebuildShape(); makeButtons(); makeBrushed();
+  rebuildShape(); makeButtons(); syncIsland(); makeBrushed();
   camera.zoom = P.cam.zoom; camera.updateProjectionMatrix();
   const u = screenMat.uniforms; u.uParallax.value = P.car.parallax; u.uExposure.value = P.car.exposure; u.uBg.value.set(P.car.screenBg); applyTransitionMode();
   const g = gradePass.uniforms; g.uBrightness.value = P.grade.brightness; g.uContrast.value = P.grade.contrast; g.uVignette.value = P.grade.vignette; g.uGrain.value = P.grade.grain;

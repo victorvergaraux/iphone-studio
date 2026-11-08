@@ -1,4 +1,4 @@
-import { $, DUR, EASE, reduced } from '../core/utils.js';
+import { $, DUR, EASE, icons, reduced } from '../core/utils.js';
 import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
@@ -71,7 +71,6 @@ function info(){
 const main = $('#expMain');
 row(main, T.common.format, seg1('format', Object.keys(FORMATS).map(k => [k, k]), onGeom), 'wide');
 row(main, T.exportCard.size, seg1('long', [['HD', 1280], ['FHD', 1920], ['QHD', 2560], ['4K', 3840]], onGeom));
-row(main, T.exportCard.kind, seg([['PNG', 'png'], ['Video', 'video']], () => P.exp.kind, v => setKind(v)));
 const durRow = row(main, T.exportCard.duration, seg1('length', [['15 s', 15], ['30 s', 30], ['Shots', 0]]));
 
 /* ── Más ajustes ── */
@@ -94,14 +93,20 @@ const shRow = row(png, T.common.shadow, sw);
 function syncShadow(){ const on = !!P.exp.transparent; shRow.classList.toggle('dis', !on); rng.disabled = !on; shRow.title = on ? '' : T.exportCard.shadowNeedsAlpha; }
 syncs.push(shade, syncShadow); shade(); syncShadow();
 
-/* ── Tipo PNG | Video: cambia botón, fila de duración y panel de «Más» sin mover la card ── */
+/* ── Tipo PNG | Video: pestañas arriba de todo (bajo el título). Cada una trae sus datos: cambia botón, fila de duración,
+   aviso y panel de «Más» sin mover la card ── */
+const tabs = seg([['PNG', 'png'], ['Video', 'video']], () => P.exp.kind, v => setKind(v));
+tabs.classList.add('exp-tabs'); tabs.setAttribute('aria-label', T.exportCard.tabsAria);
+$('.exp-head').after(tabs);
+const hint = $('#expHint'); hint.textContent = T.exportCard.videoHint;
 const panes = { video:vid, png };
 function setKind(k, instant){
   if (k !== 'png' && k !== 'video') k = 'png';
   const prev = shown; shown = k;
   if (P.exp.kind !== k) { P.exp.kind = k; saveSoon(); } // persiste el tipo
   syncs.forEach(f => f()); info();
-  go.textContent = k === 'png' ? T.exportCard.capturePng : T.exportCard.renderVideo;
+  go.innerHTML = `<i data-lucide="${k === 'png' ? 'camera' : 'video'}"></i><span></span>`; go.querySelector('span').textContent = k === 'png' ? T.exportCard.capturePng : T.exportCard.renderVideo; icons();
+  hint.style.visibility = k === 'video' ? 'visible' : 'hidden'; // reserva su alto: solo cambia visibility
   durRow.classList.toggle('off', k === 'png'); // reserva su alto: solo se oculta
   durRow.toggleAttribute('inert', k === 'png');
   for (const [name, el] of Object.entries(panes)) {

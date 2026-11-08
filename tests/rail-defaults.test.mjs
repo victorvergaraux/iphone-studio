@@ -7,7 +7,7 @@ await run('rail · orden, título, dock oculto y sin Play', async ({ page, ok, e
   await page.evaluate(() => gsap.ticker.lagSmoothing(0));
   const wait = ms => page.waitForTimeout(ms);
 
-  eq(await page.evaluate(() => [...document.querySelectorAll('#rail button')].map(b => b.id)), ['onbHelp', 'railExport', 'railDock', 'railShots', 'railPanel'], 'orden: … Pantallas · Cinemática · Controles avanzados');
+  eq(await page.evaluate(() => [...document.querySelectorAll('#rail button')].map(b => b.id)), ['onbHelp', 'railShots', 'railPanel', 'railDock', 'railExport'], 'orden: Ayuda · Cinemática · Controles avanzados · Pantallas (penúltima) · Exportar (última)');
   ok(await page.evaluate(() => !document.querySelector('#railPlay')), 'no hay botón Play en el rail');
   eq(await page.evaluate(() => document.querySelector('#railPanel').dataset.tip), 'Controles avanzados', 'tooltip del botón = Controles avanzados');
 

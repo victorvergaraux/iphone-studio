@@ -4,8 +4,8 @@ import { DUR, EASE } from '../core/utils.js';
 import { P } from '../core/params.js';
 import { gtao, renderer } from './renderer.js';
 import { SLAB_TOP, mBlocks } from './scene.js';
-import { B, BEZEL, FPH, FPR, FPW, PD, PH, PW, SH, SW, Z_GLASS, anchor, back, body, depthBias, front, phone, rrPlane, rrShape, smoothNormals, tilt } from './iphone.js';
-import { island, mGlass, screen } from './screen.js';
+import { B, BEZEL, FPH, FPR, FPW, INSET, PD, PH, PW, RK, SH, SW, Z_FRONT, Z_GLASS, Z_ISLAND, Z_SCREEN, anchor, back, body, depthBias, front, makeButtons, phone, rrPlane, rrShape, setDims, smoothNormals, tilt } from './iphone.js';
+import { island, mGlass, screen, syncIsland } from './screen.js';
 import { SMUDGE_MAP } from '../data/smudge-map.js';
 
 /* ── Imperfecciones del vidrio (huellas / grasa) ──
@@ -19,7 +19,9 @@ const smudgeTex = new THREE.TextureLoader().load(SMUDGE_MAP);
 smudgeTex.colorSpace = THREE.NoColorSpace; smudgeTex.wrapS = smudgeTex.wrapT = THREE.RepeatWrapping;
 smudgeTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 export const smudgeU = { uSmudgeR:{ value:P.phone.smudgeR }, uSmudgeM:{ value:P.phone.smudgeM }, uSmudgeH:{ value:P.phone.smudgeH } };
-export function applySmudgeScale(){ const k = P.phone.smudgeScale; smudgeTex.repeat.set(k, k * FPH / FPW); } // repetición isotrópica (no estira la huella)
+// Repetición isotrópica (no estira la huella) y de tamaño físico constante: en la tablet (más ancha) el mapa se repite más veces para que la huella no crezca.
+const SMUDGE_REF_W = 0.676; // ancho del panel frontal del iPhone (referencia de la escala)
+export function applySmudgeScale(){ const k = P.phone.smudgeScale / SMUDGE_REF_W; smudgeTex.repeat.set(k * FPW, k * FPH); }
 applySmudgeScale();
 mGlass.roughnessMap = smudgeTex; mGlass.metalnessMap = smudgeTex;
 mGlass.onBeforeCompile = sh => {
@@ -49,11 +51,11 @@ glass.renderOrder = 2; // transparente aditivo sin depthWrite: se dibuja al fina
 /* Radio editable: se regeneran las geometrías (extrude + planos) con el mismo contorno, todas derivadas
    de un único radio para que bisel, vidrio y pantalla queden concéntricos. Coste: ~1 ms por cambio. */
 export function rebuildShape(){
-  const r = THREE.MathUtils.clamp(P.phone.radius, 0.04, PW / 2 - 0.02);
+  const r = THREE.MathUtils.clamp(P.phone.radius * RK, 0.04, PW / 2 - 0.02); // RK: la tablet usa esquinas proporcionalmente más cerradas
   const swap = (m, g) => { m.geometry.dispose(); m.geometry = g; };
   const bg = new THREE.ExtrudeGeometry(rrShape(PW - 2*B, PH - 2*B, r - B), { depth: PD - 2*B, bevelEnabled:true, bevelThickness:B, bevelSize:B, bevelSegments:10, curveSegments:48 });
   bg.translate(0, 0, -(PD - 2*B)/2); smoothNormals(bg); swap(body, bg);
-  const fr = r - 0.015;
+  const fr = r - INSET;
   swap(front, rrPlane(FPW, FPH, fr)); swap(back, rrPlane(FPW, FPH, fr)); swap(glass, rrPlane(FPW, FPH, fr));
   swap(screen, rrPlane(SW, SH, Math.max(0.01, r - BEZEL)));            // radio pantalla = cuerpo − bisel
   const iw = P.phone.islandW, ih = 0.054;                               // isla: radio = fracción de medio alto
@@ -76,7 +78,7 @@ function placeProp(){
   const top = new THREE.Vector3(0, Math.sin(a), -Math.cos(a)), n = new THREE.Vector3(0, Math.cos(a), Math.sin(a));
   const c = new THREE.Vector3(0, leanLift(a), 0);
   const P0 = c.clone().addScaledVector(top, PH/2 - 0.22).addScaledVector(n, -PD/2);
-  prop.scale.y = P0.y; prop.position.set(0, P0.y/2, P0.z - 0.21);
+  prop.scale.set(PW / 0.706, P0.y, 1); prop.position.set(0, P0.y/2, P0.z - 0.21); // ancho del apoyo proporcional al del aparato (el iPhone = escala 1)
 }
 placeProp();
 POSES.lean.lift = leanLift(POSES.lean.tiltX + Math.PI/2);
@@ -90,6 +92,19 @@ export function setPose(name, instant){
 }
 anchor.rotation.y = THREE.MathUtils.degToRad(P.phone.yaw);
 setPose(P.phone.pose, true);
+
+/* Cambio de modelo (iPhone ⇄ iPad): reasigna las medidas vivas de iphone.js y reajusta todo lo que dependía de ellas — geometrías,
+   profundidad de cada capa del frente, botones, escala de huellas, apoyo de la pose «lean» y alturas de pose. Instantáneo (sin tween). */
+export function applyDevice(){
+  setDims(P.phone.device);
+  front.position.z = PD/2 + Z_FRONT; back.position.z = -PD/2 - Z_FRONT;
+  screen.position.z = PD/2 + Z_SCREEN; glass.position.z = PD/2 + Z_GLASS;
+  island.position.set(0, SH/2 - 0.058, PD/2 + Z_ISLAND);
+  rebuildShape(); makeButtons(); applySmudgeScale(); syncIsland();
+  POSES.flat.lift = PD/2 + 0.002;
+  placeProp(); POSES.lean.lift = leanLift(POSES.lean.tiltX + Math.PI/2);
+  setPose(P.phone.pose, true);
+}
 
 /* AO sin recortes. La máscara 2D anterior no tenía profundidad y, a media resolución, recortaba la AO de lo
    que había detrás del celular (bloques, losa) con un contorno escalonado. Solución consistente en 3D:

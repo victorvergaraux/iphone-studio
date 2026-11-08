@@ -6,7 +6,7 @@ export const P = {
     objPreset:'base', towerX:-2.7, towerY:1.7, towerZ:-1.9, blockX:2.5, blockY:0.14, blockZ:1.9, cylX:1.7, cylY:1.175, cylZ:-0.95, sphereX:-1.25, sphereY:0.82, sphereZ:0.85 },
   env:   { preset:'hall', intensity:1, normalize:true, rotation:0, exposure:1, tone:'neutral', background:'solid', blur:0.35, bgIntensity:1 },
   shadow:{ on:true, strength:1.2, size:3, minElev:22, ao:1, aoRadius:0.3 },
-  phone: { finish:'graphite', btnDepth:0.006, pose:'lean', yaw:-23, y:0, radius:0.18, islandW:0.18, islandR:1, frame:'#4a4a4c', glass:0.63, glassRough:0.08, smudgeR:0.02, smudgeM:0.89, smudgeH:0.2, smudgeScale:0.35, island:true },
+  phone: { device:'phone', finish:'graphite', btnDepth:0.006, pose:'lean', yaw:-23, y:0, radius:0.18, islandW:0.18, islandR:1, frame:'#4a4a4c', glass:0.63, glassRough:0.08, smudgeR:0.02, smudgeM:0.89, smudgeH:0.2, smudgeScale:0.35, island:true },
   metal: { rough:0.38, metal:1, streak:0.55, scale:4, angle:0, aniso:0.55 },
   anim:  { type:'none', amp:1, speed:1 },
   cam:   { fov:10, zoom:1, ease:'expo.inOut', flyDur:1.8, drift: reduced ? 0 : 0.35, driftSpeed:0.6 },

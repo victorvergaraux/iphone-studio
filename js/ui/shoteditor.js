@@ -1,8 +1,9 @@
-import { $, icons, reduced, toast } from '../core/utils.js';
+import { $, icons, reduced } from '../core/utils.js';
 import { T } from '../core/strings.js';
 import { P } from '../core/params.js';
 import { saveSoon } from '../core/persist.js';
 import { hooks } from '../core/hooks.js';
+import { camera } from '../three/renderer.js';
 import { CAM_EASES, SHOT_PRESETS, addShot, applyShotPreset, curShot, deleteShot, duplicateShot, flyTo, moveShot, playPresentation, presTL, renameShot, setShotTiming, shots, stopPresentation, updateShot } from '../three/camera.js';
 import { closeOnboarding, onboardingOpen } from './onboarding.js';
 import { closeExport, exportOpen } from './exportcard.js';
@@ -31,7 +32,7 @@ const fmtMove = v => (+v < 0.01 ? T.editor.corte : secs(v));
 const fields = {}, gfields = {};
 const tabsEl = mk('div', 'exp-seg se-tabs'); tabsEl.setAttribute('role', 'group'); tabsEl.setAttribute('aria-label', T.editor.tabsAria);
 const tabBtns = {};
-for (const [k, l] of [['shot', T.common.shot], ['global', T.common.global]]) { const b = mk('button', '', l); b.type = 'button'; b.onclick = () => { tab = k; syncDetail(); }; tabsEl.append(b); tabBtns[k] = b; }
+for (const [k, l] of [['global', T.common.global], ['shot', T.common.shot]]) { const b = mk('button', '', l); b.type = 'button'; b.onclick = () => { tab = k; syncDetail(); }; tabsEl.append(b); tabBtns[k] = b; }
 function sliderCtl(id, label, min, max, step, fmt, onInput, onChange){
   const wrap = mk('div', 'exp-sl'), rng = mk('input', 'exp-rng'), val = mk('output', 'se-val');
   rng.type = 'range'; rng.min = min; rng.max = max; rng.step = step; rng.id = id; rng.setAttribute('aria-label', label);
@@ -67,6 +68,10 @@ const switchCtl = (id, label, get, set) => {
       v => { P.shots[key] = v; saveSoon(); record(T.history.adjust(label), { key:`shots/${key}`, last:true }); refresh(); });
     gfields[key] = c; gbody.append(row2(label, c.wrap));
   }
+  // Zoom de cámara de toda la cinemática (antes en Camera › Lens del panel avanzado): P.cam.zoom, en vivo sobre la cámara
+  { const c = sliderCtl('se-g-zoom', T.editor.sliderGlobalAria('Zoom'), 0.5, 4, 0.01, v => (+v).toFixed(2) + '×', v => { P.cam.zoom = v; camera.zoom = v; camera.updateProjectionMatrix(); },
+      v => { P.cam.zoom = v; camera.zoom = v; camera.updateProjectionMatrix(); saveSoon(); hooks.refreshPane?.(); record(T.history.adjust('Zoom'), { key:'cam/zoom', last:true }); });
+    gfields.zoom = c; gbody.append(row2('Zoom', c.wrap)); }
   gfields.loop = switchCtl('se-g-loop', 'Loop', () => P.shots.loop, v => { P.shots.loop = v; });
   gfields.random = switchCtl('se-g-random', 'Random', () => P.shots.randomHalf, v => { P.shots.randomHalf = v; });
   gbody.append(row2('Loop', gfields.loop));
@@ -100,39 +105,28 @@ function syncDetail(){
   easeSel.value = on && s.ease ? s.ease : ''; fields.ease.g.disabled = !(on && s.ease);
   // global
   for (const key of ['transition', 'hold']) { const c = gfields[key]; c.rng.value = P.shots[key]; c.val.textContent = (key === 'transition' ? fmtMove : secs)(P.shots[key]); }
+  gfields.zoom.rng.value = P.cam.zoom; gfields.zoom.val.textContent = (+P.cam.zoom).toFixed(2) + '×';
   gfields.loop.setAttribute('aria-checked', String(!!P.shots.loop)); gfields.random.setAttribute('aria-checked', String(!!P.shots.randomHalf));
   for (const [b, n] of gfields.count) { b.setAttribute('aria-pressed', String(P.shots.halfCount === n)); b.disabled = !P.shots.randomHalf; }
   if (lastSel !== curShot) { lastSel = curShot; if (on && isShot) { gsap.set(db, { opacity:.25 }); fade(db, 1, .5, 'power2.out'); } }
 }
 
-/* ── Acciones ── */
+/* ── Acciones ──
+   Solo quedan las globales (preset · reproducir · guardar cámara). Actualizar / duplicar / renombrar / eliminar viven como iconos en cada fila
+   (rowEl) y actúan sobre SU toma. Subir / bajar se hacen arrastrando el asa o con las flechas arriba/abajo sobre ella. */
 const A = {};
-// Copiar JSON: lista de tomas (mismo formato que el proyecto: p, t, fov, name y overrides move/hold/ease) al portapapeles
-async function copyJson(){
-  const json = JSON.stringify(shots.map(({ p, t, fov, name, move, hold, ease }) => ({ p, t, fov, name, move, hold, ease })), null, 2); // JSON.stringify omite los undefined
-  try { await navigator.clipboard.writeText(json); }
-  catch { const ta = Object.assign(document.createElement('textarea'), { value:json }); document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-  toast(T.shot.jsonCopied(shots.length));
-}
 function act(id, label, fn, cls = ''){ const b = mk('button', 'se-b ' + cls, label); b.type = 'button'; b.id = `se-${id}`; b.onclick = fn; A[id] = b; return b; }
-acts.append(
-  act('play', '', () => { presTL ? stopPresentation() : playPresentation(); }, 'se-wide se-play'),
-  act('save', T.editor.saveCam, () => addShot(), 'solid se-wide'),
-  act('upd', T.editor.update, () => updateShot()),
-  act('dup', T.editor.duplicate, () => duplicateShot()),
-  act('ren', T.editor.rename, () => curShot >= 0 && startEdit(curShot)),
-  act('del', T.editor.remove, () => deleteShot()),
-  act('up', T.editor.up, () => moveShot(curShot, curShot - 1)),
-  act('down', T.editor.down, () => moveShot(curShot, curShot + 1)),
-  act('json', T.editor.copyJson, copyJson, 'se-wide2'),
-);
-{ // Preset: selector (el mismo P.shots.preset del panel) + cargar
+{ // Preset (primero): selector (el mismo P.shots.preset del panel) + cargar
   const r = mk('div', 'se-preset'), sel = mk('select', 'se-sel'); sel.id = 'se-presetSel'; sel.setAttribute('aria-label', 'Preset');
   for (const [k, v] of Object.entries(SHOT_PRESETS)) { const o = mk('option', '', v.label); o.value = k; sel.append(o); }
   sel.onchange = () => { P.shots.preset = sel.value; saveSoon(); hooks.refreshPane?.(); };
   A.presetSel = sel;
   r.append(sel, act('preset', T.common.load, () => { sel.value = P.shots.preset; applyShotPreset(); })); acts.append(r);
 }
+acts.append(
+  act('play', '', () => { presTL ? stopPresentation() : playPresentation(); }, 'se-wide se-play'),
+  act('save', T.editor.saveCam, () => addShot(), 'solid se-wide'),
+);
 // Play / stop de la cinemática dentro de la card: mismo estado que el botón del rail (strips.setPlayBtn avisa por hooks.shotEditorPlay)
 function syncPlay(on){
   const b = A.play; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
@@ -140,9 +134,6 @@ function syncPlay(on){
 }
 hooks.shotEditorPlay = syncPlay; syncPlay(!!presTL);
 function syncActs(){
-  const on = !!shots[curShot];
-  for (const k of ['upd', 'dup', 'ren', 'del']) A[k].disabled = !on;
-  A.up.disabled = !on || curShot <= 0; A.down.disabled = !on || curShot >= shots.length - 1;
   if (A.presetSel.value !== P.shots.preset) A.presetSel.value = P.shots.preset;
 }
 
@@ -174,7 +165,17 @@ function rowEl(s, i){
     main.onclick = () => flyTo(i);
     main.ondblclick = () => startEdit(i);
   }
-  r.append(grip, ord, main); return r;
+  r.append(grip, ord, main);
+  if (editing !== i) {
+    const tools = mk('div', 'se-rtools');
+    for (const [id, icon, label, fn] of [['upd', 'refresh-cw', T.editor.update, () => updateShot(i)], ['dup', 'copy', T.editor.duplicate, () => duplicateShot(i)],
+      ['ren', 'pencil', T.editor.rename, () => startEdit(i)], ['del', 'trash-2', T.editor.remove, () => deleteShot(i)]]) {
+      const b = mk('button', 'se-ri'); b.type = 'button'; b.dataset.act = id; b.title = label; b.setAttribute('aria-label', T.editor.rowAria(label, i + 1));
+      b.innerHTML = `<i data-lucide="${icon}"></i>`; b.onclick = e => { e.stopPropagation(); fn(); }; tools.append(b);
+    }
+    r.append(tools);
+  }
+  return r;
 }
 /* Arrastrar con puntero desde el asa: la fila se atenúa y una marca indica dónde caerá; al soltar se llama a moveShot */
 let drag = null;
@@ -239,5 +240,5 @@ card.addEventListener('keydown', e => { if (e.target.closest('select') && e.key 
   const bu = mkIco('seUndo', 'undo-2', T.common.undo, T.editor.undoTip, () => undo()), br = mkIco('seRedo', 'redo-2', T.common.redo, T.editor.redoTip, () => redo());
   $('#seClose').before(bu, br); icons();
   const sync = () => { bu.disabled = !canUndo(); br.disabled = !canRedo(); };
-  subscribe(sync); sync();
+  subscribe(() => { sync(); if (!card.hidden) refresh(); }); sync(); // deshacer/rehacer también repinta el detalle (p. ej. el zoom global)
 }

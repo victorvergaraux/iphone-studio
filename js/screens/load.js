@@ -7,6 +7,7 @@ import { refreshEdit } from '../ui/pane.js';
 import { addShot, renderStrip, togglePres } from '../ui/strips.js';
 import { applyEdit, syncScreens } from './store.js';
 import { toggleDock } from '../ui/dockToggle.js';
+import { suggestFor } from '../ui/device.js';
 
 /* ───────────────────────── Carga: input, drag & drop, pegar ───────────────────────── */
 function fitToMax(img){
@@ -72,6 +73,7 @@ export async function loadBlobs(list, states = [], opts = {}){
   const n = items.length - firstNew;
   if (n > 0) { setSel(firstNew); renderStrip(); refreshEdit(); goTo(firstNew); syncScreens(); }
   if (!opts.silent) {
+    if (n > 0) suggestFor(items.slice(firstNew));   // ¿las pantallas nuevas son horizontales/verticales respecto al modelo activo?
     const parts = [];
     if (n > 0) parts.push(T.load.loaded(n));
     if (skipped.length) parts.push(T.load.skipped(skipped));

@@ -35,7 +35,6 @@ export const T = {
     presetLoaded: label => `Preset ${label} cargado`,
     pickFirst: 'Elige una toma de la lista primero',
     emptyCinematic: 'Tu cinemática está vacía: guarda al menos una toma',
-    jsonCopied: n => `Cinemática copiada como JSON (${n} ${plural(n, 'toma', 'tomas')})`,
   },
 
   /* Editor de cinemática (shoteditor.js) */
@@ -52,7 +51,7 @@ export const T = {
     gripAria: n => `Mover toma ${pad2(n)}: arrastra o usa flechas arriba y abajo`,
     nameAria: n => `Nombre de la toma ${pad2(n)}`,
     saveCam: 'Guardar cámara', update: 'Actualizar', duplicate: 'Duplicar', rename: 'Renombrar',
-    remove: 'Eliminar', up: 'Subir', down: 'Bajar', copyJson: 'Copiar JSON',
+    remove: 'Eliminar', rowAria: (label, n) => `${label} toma ${pad2(n)}`,
     undoTip: 'Deshacer · Ctrl+Z', redoTip: 'Rehacer · Ctrl+Shift+Z',
   },
 
@@ -73,6 +72,17 @@ export const T = {
     keepOne: 'Debe quedar al menos una pantalla',
   },
 
+  /* Modelo de pantalla: celular / tablet (ui/device.js) */
+  device: {
+    // Sugerencia al cargar una pantalla de orientación contraria al modelo activo; la clave es el modelo SUGERIDO
+    hint: {
+      tablet: 'Esta pantalla es horizontal: se ve mejor en Tablet',
+      phone: 'Esta pantalla es vertical: se ve mejor en Celular',
+    },
+    hintHidden: 'Esta pantalla no encaja con el modelo actual: abre Pantallas (D) y cambia de modelo',
+    history: 'cambiar modelo',
+  },
+
   /* Onboarding (onboarding.js) */
   onboarding: {
     steps: [
@@ -87,9 +97,11 @@ export const T = {
 
   /* Card de exportación (exportcard.js) */
   exportCard: {
-    size: 'Tamaño', kind: 'Tipo', duration: 'Duración', mode: 'Modo', scale: 'Escala',
+    size: 'Tamaño', duration: 'Duración', mode: 'Modo', scale: 'Escala',
     no: 'No', yes: 'Sí',
     capturePng: 'Capturar PNG', renderVideo: 'Renderizar video',
+    tabsAria: 'Tipo de exportación',
+    videoHint: 'Si la exportación de video falla, prueba el modo Realtime en «Más ajustes».',
     screenNote: 'Pantalla: depende de tu ventana',
     shadowNeedsAlpha: 'Solo aplica con Alpha activo',
     videoNote: (mbText, frames) => `≈ ${mbText} MB · ${frames} cuadros`,

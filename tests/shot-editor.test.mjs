@@ -18,7 +18,7 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
   await ev('window.__log = []; hooks.onShotsChange = r => window.__log.push(r);');
 
   // ── Rail: botón, orden y accesibilidad ──
-  eq(await page.evaluate(() => [...document.querySelectorAll('#rail button')].map(b => b.id)), ['onbHelp', 'railExport', 'railDock', 'railShots', 'railPanel'], 'botón Tomas antes de Play');
+  eq(await page.evaluate(() => [...document.querySelectorAll('#rail button')].map(b => b.id)), ['onbHelp', 'railShots', 'railPanel', 'railDock', 'railExport'], 'botón Tomas antes de Play');
   eq(await page.evaluate(() => { const b = document.querySelector('#railShots'); return [b.dataset.tip, b.getAttribute('aria-expanded'), !!b.getAttribute('aria-label')]; }), ['Cinemática', 'false', true], 'tooltip, aria-expanded y aria-label');
 
   // ── Abrir / cerrar y exclusión mutua ──
@@ -44,11 +44,11 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
   eq(await ev('return cam.curShot'), 4, 'la toma nueva queda seleccionada');
   await page.click('.se-row[data-i="0"] .se-main'); await wait(300);
   eq(await ev('return cam.curShot'), 0, 'clic en fila selecciona y vuela a la toma');
-  await page.click('#se-ren'); await wait(100);
+  await page.click('.se-row[data-i="0"] [data-act="ren"]'); await wait(100);
   await page.fill('.se-edit', 'Alpha'); await page.press('.se-edit', 'Enter'); await wait(150);
   eq((await names())[0], 'Alpha', 'renombrar (edición inline)');
   eq(await page.textContent('.se-row[data-i="0"] .se-nm'), 'Alpha', 'la fila muestra el nombre');
-  await page.click('#se-dup'); await wait(150);
+  await page.click('.se-row[data-i="0"] [data-act="dup"]'); await wait(150);
   eq((await names()).slice(0, 2), ['Alpha', 'Alpha 2'], 'duplicar inserta tras la original');
   eq(await ev('return [cam.shots.length, cam.curShot]'), [6, 1], 'duplicar: 6 tomas, la copia queda seleccionada');
   // Reordenar con teclado (asa: flecha abajo)
@@ -57,11 +57,8 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
   eq(await page.evaluate(() => document.activeElement?.closest('.se-row')?.dataset.i), '2', 'el foco sigue al asa de la toma movida');
   await page.keyboard.press('ArrowUp'); await wait(200);
   eq((await names())[1], 'Alpha 2', 'teclado: flecha arriba sube la toma');
-  // Botones subir/bajar accesibles
-  await page.click('#se-down'); await wait(150);
-  eq((await names())[2], 'Alpha 2', 'botón Bajar');
-  await page.click('#se-up'); await wait(150);
-  eq((await names())[1], 'Alpha 2', 'botón Subir');
+  // Subir / bajar / Copiar JSON ya no tienen botón (se reordena con asa o flechas)
+  ok(await page.evaluate(() => !document.querySelector('#se-up, #se-down, #se-json')), 'sin botones Subir / Bajar / Copiar JSON');
   // Reordenar con puntero: arrastra el asa de la fila 2 justo debajo de la fila 3
   await page.click('.se-row[data-i="1"] .se-main'); await wait(200);
   const g = await page.evaluate(() => { const r = document.querySelector('.se-row[data-i="1"] .se-grip').getBoundingClientRect(), t = document.querySelector('.se-row[data-i="3"]').getBoundingClientRect(); return { x:r.x + r.width / 2, y:r.y + r.height / 2, ty:t.bottom + 1 }; });
@@ -107,8 +104,8 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
 
   // ── Resto de operaciones y motivos de onShotsChange ──
   await page.click('.se-row[data-i="1"] .se-main'); await wait(150);
-  await page.click('#se-upd'); await wait(100);
-  await page.click('#se-del'); await wait(150);
+  await page.click('.se-row[data-i="1"] [data-act="upd"]'); await wait(100);
+  await page.click('.se-row[data-i="1"] [data-act="del"]'); await wait(150);
   eq(await ev('return cam.shots.length'), 4, 'eliminar quita la toma');
   await page.selectOption('#se-presetSel', 'producto'); await page.click('#se-preset'); await wait(500);
   eq(await ev('return [cam.shots.length, cam.shots.every(s => s.example)]'), [3, true], 'cargar preset (Product: 3 tomas)');
@@ -119,7 +116,7 @@ await run('shot-editor · card, operaciones, overrides y persistencia', async ({
   // ── Persistencia: recarga ──
   await ev(`P.shots.preset = 'base'; cam.applyShotPreset();`); await wait(500);
   await page.click('.se-row[data-i="1"] .se-main'); await wait(200);
-  await page.click('#se-ren'); await page.fill('.se-edit', 'Persist'); await page.press('.se-edit', 'Enter'); await wait(100);
+  await page.click('.se-row[data-i="1"] [data-act="ren"]'); await page.fill('.se-edit', 'Persist'); await page.press('.se-edit', 'Enter'); await wait(100);
   await page.fill('#se-move', '0.5'); await page.press('#se-move', 'Enter'); await wait(100);
   await page.fill('#se-hold', '2.5'); await page.press('#se-hold', 'Enter'); await wait(100);
   await page.selectOption('#se-ease', 'cine'); await wait(600);

@@ -29,6 +29,17 @@ export function addItem(src, name, opts = {}){
     id: opts.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 8)), blob: opts.blob || null, stored: !!opts.stored };
   items.push(it); return it;
 }
+/* Al cambiar de modelo (otro S_ASPECT) las pantallas con el encuadre por defecto se recalculan con la regla de addItem (largas → ancho + scroll,
+   resto → cover). Las que el usuario tocó (zoom, desplazamiento, contain/otro ajuste) se respetan tal cual. prevAspect = S_ASPECT del modelo anterior. */
+export function reframeDefaults(prevAspect){
+  for (const it of items) {
+    const wasTall = it.aspect < prevAspect * 0.82;
+    const isDefault = it.zoom === 1 && !it.offX && !it.offY && it.fit === (wasTall ? 'width' : 'cover') && it.autoScroll === wasTall;
+    if (!isDefault) continue;
+    const tall = it.aspect < S_ASPECT * 0.82;
+    Object.assign(it, { fit: tall ? 'width' : 'cover', scroll: tall ? 0 : 0.5, autoScroll: tall });
+  }
+}
 // Fracción visible + centro de muestreo según encuadre (equivalente a object-fit + object-position)
 export function xform(it, out){
   const sa = S_ASPECT, ia = it.aspect; let vx, vy;
@@ -47,10 +58,11 @@ export function scheduleCar(){
   const it = items[cur]; if (!it) return;
   const hold = Math.max(0.2, P.car.hold);
   if (it.autoScroll && canScroll(it)) {
-    // delay: la pantalla queda quieta arriba antes de bajar; el scroll ocupa el resto del tiempo visible
+    // delay: la pantalla queda quieta arriba antes de bajar. Luego baja hasta el final y VUELVE A SUBIR (yoyo: cada tramo ocupa la mitad del
+    // tiempo restante, el easing se invierte solo) → al pasar al siguiente diseño ya está arriba otra vez, sin cambiar la duración total (hold).
     const d = Math.min(Math.max(0, P.car.scrollDelay), Math.max(0, hold - 0.2));
     it.scroll = 0;
-    scrollTween = gsap.to(it, { scroll:1, delay:d, duration:Math.max(0.2, hold - d), ease:'power3.inOut', onUpdate:() => hooks.refreshScroll() }); // power3 = Quart en GSAP (t⁴)
+    scrollTween = gsap.to(it, { scroll:1, delay:d, duration:Math.max(0.1, (hold - d) / 2), ease:'power3.inOut', yoyo:true, repeat:1, onUpdate:() => hooks.refreshScroll() }); // power3 = Quart en GSAP (t⁴)
   }
   if (carPlaying && items.length > 1) carTimer = gsap.delayedCall(hold, () => goTo((cur + 1) % items.length));
 }

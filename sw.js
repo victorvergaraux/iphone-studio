@@ -52,6 +52,7 @@ const PRECACHE = [
   'js/three/screen.js',
   'js/three/session.js',
   'js/three/smudge.js',
+  'js/ui/device.js',
   'js/ui/dockToggle.js',
   'js/ui/exportcard.js',
   'js/ui/onboarding.js',

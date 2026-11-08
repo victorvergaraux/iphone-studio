@@ -62,6 +62,9 @@ screen.position.z = PD/2 + Z_SCREEN; phone.add(screen); depthBias(screenMat, 1);
 // Isla: píldora real (radio = mitad del alto con círculo exacto; con squircle se veía rectangular)
 export const island = new THREE.Mesh(rrPlane(0.18, 0.054, 0.0269, 2), new THREE.MeshBasicMaterial({ color:0x000000 }));
 island.position.set(0, SH/2 - 0.058, PD/2 + Z_ISLAND); phone.add(island); depthBias(island.material, 2); // por encima de la pantalla, por debajo del vidrio
+// La isla es del iPhone: la tablet no la lleva aunque P.phone.island esté activo
+export const syncIsland = () => { island.visible = P.phone.island && P.phone.device === 'phone'; };
+syncIsland();
 
 // Cristal: material negro con blending aditivo → solo suma reflejos especulares del entorno y del sol sobre la pantalla
 export const mGlass = new THREE.MeshPhysicalMaterial({ color:0x000000, roughness:P.phone.glassRough, metalness:0, clearcoat:1, clearcoatRoughness:0.02,

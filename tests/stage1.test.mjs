@@ -15,8 +15,6 @@ await run('etapa 1 · textos, toast, motivo de paleta y hover', async ({ page, o
   await page.click('#railShots'); await wait(1300);
   ok(/Tu cinemática está vacía/.test(await page.evaluate(() => document.querySelector('.se-empty')?.textContent || '')), 'lista vacía del editor con el texto nuevo');
   await ev('cam.applyShotPreset();'); await wait(500);
-  await page.click('#se-json'); await wait(300);
-  ok(/Cinemática copiada como JSON \(\d+ tomas?\)/.test(await toastText()), `copiar JSON: «${await toastText()}»`);
   await page.click('#seClose'); await wait(900);
 
   // ── Toast: estilo de las cards (Inter, papel claro, arriba, sin movimiento en Y) ──

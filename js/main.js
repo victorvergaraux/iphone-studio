@@ -21,6 +21,7 @@ import './ui/strips.js';
 import './ui/shotbar.js';
 import './ui/touch.js';
 import './ui/dockToggle.js';
+import './ui/device.js';
 import './ui/onboarding.js';
 import './ui/exportcard.js';
 import './screens/load.js';
@@ -33,7 +34,7 @@ import { saved } from './core/persist.js';
 import { camera, controls } from './three/renderer.js';
 import { blocksG, ground } from './three/scene.js';
 import { loadEnv } from './three/hdri.js';
-import { island } from './three/screen.js';
+import { syncIsland } from './three/screen.js';
 import { addItem, items, scheduleCar } from './screens/carousel.js';
 import { loadBlobs } from './screens/load.js';
 import { loadStored } from './screens/store.js';
@@ -71,7 +72,7 @@ import './core/history.js'; // deshacer / rehacer (tomas + ajustes)
   // tomas guardadas solo si alguna es tuya; si todas eran de ejemplo, se regeneran con el preset
   if (Array.isArray(saved?.shots) && saved.shots.length && !saved.shots.every(s => s.example)) setShots(saved.shots.map(sanitizeShot).filter(Boolean));
   if (!shots.length) defaultShots();
-  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; island.visible = P.phone.island;
+  blocksG.visible = P.scene.showBlocks; ground.visible = P.scene.showFloor; syncIsland();
   camera.fov = shots[0].fov; camera.updateProjectionMatrix();
   controls.target.fromArray(shots[0].t); camera.position.fromArray(shots[0].p); setCurShot(0);
   renderStrip(); renderShots(); refreshEdit(); setCarBtn(); icons(); setQuality(false); layout(); scheduleCar();

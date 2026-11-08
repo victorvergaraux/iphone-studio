@@ -16,14 +16,20 @@ await run('export-card · formato, tipo y estimaciones', async ({ page, ok, eq, 
   await page.click('#railExport'); await wait(900);
   eq(await pressed('#expMain .exp-row.wide'), ['9:16'], 'formato por defecto 9:16');
   eq(await txt('#expSize'), '1080×1920', 'lectura de salida 9:16 FHD');
-  eq(await pressed('#expMain .exp-row:nth-child(3)'), ['PNG'], 'tipo por defecto PNG');
+  eq(await pressed('.exp-tabs'), ['PNG'], 'tipo por defecto PNG (pestañas arriba)');
+  ok(await page.evaluate(() => { const t = document.querySelector('.exp-tabs').getBoundingClientRect(), o = document.querySelector('.exp-out').getBoundingClientRect(); return t.bottom <= o.top; }), 'las pestañas PNG | Video van encima de la lectura de salida');
   const note = i => page.evaluate(n => { const e = document.querySelectorAll('.exp-note')[n]; return [e.textContent, getComputedStyle(e).visibility]; }, i);
 
   // ── PNG ↔ Video: estimación y alto estable ──
   const hPng = await h('#expCard');
-  await clickIn('#expMain', 'Video'); await wait(900);
+  await clickIn('.exp-tabs', 'Video'); await wait(900);
   const hVid = await h('#expCard');
   eq(hVid, hPng, 'altura de la card igual en PNG y Video');
+  eq(await vis('#expHint'), 'visible', 'aviso de Realtime visible en Video');
+  ok(/Realtime/.test(await txt('#expHint')), `el aviso sugiere el modo Realtime («${await txt('#expHint')}»)`);
+  const goStyle = await page.evaluate(() => { const b = document.querySelector('#expGo'), c = getComputedStyle(b), a = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(); const t = document.createElement('i'); t.style.color = a; document.body.append(t); const acc = getComputedStyle(t).color; t.remove(); return { bg: c.backgroundColor, acc, icon: !!b.querySelector('svg') }; });
+  ok(goStyle.icon, 'el botón principal lleva icono');
+  eq(goStyle.bg, goStyle.acc, 'el botón principal es amarillo (--accent), como Reproducir cinemática');
   eq(await note(0), ['≈ 30 MB · 450 cuadros', 'visible'], 'estimación: 16 Mbps × 15 s = 30 MB, 450 cuadros');
   eq((await note(1))[1], 'hidden', 'sin aviso «depende de tu ventana» con 9:16');
   await clickIn('#expMain', '30 s'); await wait(100);
@@ -63,7 +69,7 @@ await run('export-card · formato, tipo y estimaciones', async ({ page, ok, eq, 
   await page.reload(); await page.waitForFunction(() => !!document.querySelector('#rail') && !!window.gsap, null, { timeout: 30000 }); await wait(2500); await page.evaluate(() => gsap.ticker.lagSmoothing(0)); await wait(1500);
   await page.evaluate(() => document.querySelector('#onbSkip')?.click()); await wait(500);
   await page.click('#railExport'); await wait(900);
-  eq(await pressed('#expMain .exp-row:nth-child(3)'), ['Video'], 'exp.kind (Video) persiste tras recargar');
+  eq(await pressed('.exp-tabs'), ['Video'], 'exp.kind (Video) persiste tras recargar');
   eq(await pressed('#expMain .exp-row.wide'), ['1:1'], 'formato guardado se conserva tras recargar');
   eq(await txt('#expGo'), 'Renderizar video', 'botón principal acorde al tipo guardado');
 });

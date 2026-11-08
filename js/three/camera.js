@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { P } from '../core/params.js';
 import { camera, controls } from './renderer.js';
 import { SLAB_TOP } from './scene.js';
-import { phone } from './iphone.js';
+import { CAM_K, phone } from './iphone.js';
 import { toast } from '../core/utils.js';
 import { T } from '../core/strings.js';
 import { hooks } from '../core/hooks.js';
@@ -49,14 +49,15 @@ export const SHOT_PRESETS = {
 };
 function buildPresetShots(key){
   const def = SHOT_PRESETS[key] || SHOT_PRESETS.producto;
-  if (def.absolute) return def.absolute.map(sh => ({ ...sh, example:true })); // tomas en coordenadas de mundo, sin cálculo relativo al celular
+  // CAM_K (iphone.js): la tablet es más grande que el celular, así que las tomas preset se alejan ese factor para que quepa en cuadro
+  if (def.absolute) return def.absolute.map(sh => ({ ...sh, p: sh.p.map((v, i) => +(sh.t[i] + (v - sh.t[i]) * CAM_K).toFixed(3)), example:true })); // coordenadas de mundo, sin cálculo relativo al celular
   phone.updateWorldMatrix(true, false);
   const q = new THREE.Quaternion(); phone.getWorldQuaternion(q);
   const r3 = v => v.toArray().map(n => +n.toFixed(3));
   return def.shots.map(sh => {
     const t = phone.localToWorld(new THREE.Vector3(...sh.t));
     const d = new THREE.Vector3(...sh.d).normalize(); if (!sh.world) d.applyQuaternion(q);
-    const dist = sh.frame / (2 * Math.tan(THREE.MathUtils.degToRad(sh.fov / 2)));
+    const dist = sh.frame * CAM_K / (2 * Math.tan(THREE.MathUtils.degToRad(sh.fov / 2)));
     const pos = t.clone().addScaledVector(d, dist);
     const minY = (P.scene.showBlocks ? SLAB_TOP : 0) + 0.12;  // nunca bajo la losa / el piso
     if (pos.y < minY) pos.y = minY;

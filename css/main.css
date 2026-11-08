@@ -1,7 +1,8 @@
 /* Layout: escenario 3D letterbox al centro, panel de parámetros a la derecha, dock editorial abajo (pantallas + tomas). */
 html,body{height:100%}
-body{--gap:12px;--radius:18px;--rail-w:36px;--pw:calc(312px + var(--gap));margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-mono);font-size:12px;overflow:hidden}
+body{--gap:12px;--radius:18px;--rail-w:36px;--pw:calc(312px + var(--gap));--dev-w:200px;--thumb-w:44px;--thumb-ar:9/19.5;margin:0;background:var(--paper);color:var(--ink);font-family:var(--f-mono);font-size:12px;overflow:hidden}
 body.panel-closed{--pw:0px}
+body.dev-tablet{--thumb-w:127px;--thumb-ar:4/3} /* miniaturas del dock con la proporción del modelo activo (mismo alto: el dock no cambia de altura) */
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit}
@@ -61,7 +62,7 @@ body.panel-closed .side{opacity:0;visibility:hidden;pointer-events:none;transiti
 #pane{padding:6px}
 #pane .tp-dfwv{width:100%!important}
 
-.dock{position:fixed;z-index:5;left:max(var(--gap), env(safe-area-inset-left,0px));right:calc(var(--pw) + var(--gap));bottom:calc(var(--gap) + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:minmax(0,1fr);
+.dock{position:fixed;z-index:5;left:max(var(--gap), env(safe-area-inset-left,0px));right:calc(var(--pw) + 2 * var(--gap) + var(--dev-w));bottom:calc(var(--gap) + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:minmax(0,1fr);
   border-radius:var(--radius);box-shadow:none;
   background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));border:0;font-family:var(--f-text);
   transition:right var(--dur) var(--ease),transform var(--dur) var(--ease)}
@@ -101,13 +102,40 @@ body.dock-hidden .dock{transform:translateY(calc(100% + 2 * var(--gap) + 8px));p
 .tgl[aria-checked="true"] .tgl-track i{transform:translateX(12px)}
 .dock .btn:disabled{opacity:.3}
 .strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
-.thumb{position:relative;flex:0 0 auto;width:44px;aspect-ratio:9/19.5;border:0;border-radius:8px;opacity:.5;transition:opacity var(--dur) var(--ease);overflow:hidden;isolation:isolate;cursor:pointer;background:var(--line);padding:0}
+.thumb{position:relative;flex:0 0 auto;width:var(--thumb-w);aspect-ratio:var(--thumb-ar);border:0;border-radius:8px;opacity:.5;transition:opacity var(--dur) var(--ease);overflow:hidden;isolation:isolate;cursor:pointer;background:var(--line);padding:0}
 .thumb img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;border-radius:inherit}
 .thumb.cur{opacity:1} /* activa: opacidad completa (el foco de color basta: sin elevación ni borde, que rompían el redondeo) */
 @media (hover:hover){.thumb:hover{opacity:.85}}
 .thumb.sel::after{content:"";position:absolute;inset:auto 4px 4px auto;width:7px;height:7px;border-radius:50%;background:var(--ink)}
 .thumb .vid{position:absolute;inset:0;display:grid;place-items:center;font-size:9px;background:var(--ink);color:var(--paper-2);letter-spacing:.08em}
 .empty{font-size:11px;color:var(--mute);align-self:center}
+
+/* Modelo de pantalla (celular / tablet): bloque bento a la derecha del dock, misma altura (--dock-h lo publica shotbar.js) y mismo
+   lenguaje: título en display con filete, opciones con relleno tonal (sin bordes), seleccionada = tinta. Se oculta con el dock. */
+.devsw{position:fixed;z-index:5;right:calc(var(--pw) + var(--gap));bottom:calc(var(--gap) + env(safe-area-inset-bottom,0px));width:var(--dev-w);height:var(--dock-h,auto);
+  padding:16px;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;border-radius:var(--radius);
+  background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));font-family:var(--f-text);
+  transition:right var(--dur) var(--ease),transform var(--dur) var(--ease)}
+body:not(.ui-ready) .devsw{transition:none!important}
+body.dock-hidden .devsw{transform:translateY(calc(100% + 2 * var(--gap) + 8px));pointer-events:none;visibility:hidden;
+  transition:right var(--dur) var(--ease),transform var(--dur) var(--ease),visibility 0s linear var(--dur)}
+.dev-title{margin:0;display:flex;align-items:center;min-height:33px;padding-bottom:12px;box-sizing:content-box;border-bottom:1px solid var(--line);
+  font-family:var(--f-display);font-weight:600;font-size:22px;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+.dev-opts{min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.dev-opt{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;border:0;border-radius:12px;cursor:pointer;
+  background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;letter-spacing:0;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease)}
+.dev-opt svg{width:22px;height:22px;stroke-width:1.6}
+.dev-opt .dev-land{transform:rotate(90deg)} /* el icono de tablet es vertical; el modelo es un iPad horizontal */
+@media (hover:hover){.dev-opt:hover{background:color-mix(in srgb,var(--ink) 16%,transparent)}}
+.dev-opt[aria-pressed="true"]{background:var(--ink);color:var(--paper-2)}
+.dev-opt[data-suggest]:not([aria-pressed="true"]){background:var(--accent);color:var(--ink)} /* la opción sugerida se marca con el acento */
+/* Tooltip sobre las dos opciones: aparece solo con opacidad, anclado al borde derecho del bloque (la opción sugerida se marca con el acento) */
+.dev-tip{position:absolute;bottom:calc(100% + 8px);right:0;width:max-content;max-width:min(300px,calc(100vw - 2 * var(--gap)));padding:7px 12px;border-radius:12px;
+  background:color-mix(in srgb,var(--paper-2) 94%,transparent);-webkit-backdrop-filter:blur(var(--panel-blur));backdrop-filter:blur(var(--panel-blur));
+  color:var(--ink);font-family:var(--f-text);font-size:12px;font-weight:500;line-height:1.35;letter-spacing:0;pointer-events:none;
+  opacity:0;transition:opacity 200ms cubic-bezier(.64,0,.78,0)}
+.devsw[data-hint] .dev-tip{opacity:1;transition:opacity 250ms cubic-bezier(.22,.61,.36,1)}
 
 /* Onboarding: tarjeta suiza (número gigante, filetes finos, una sola columna). Flota arriba a la izquierda, sin bloquear la escena. */
 /* Línea de tiempo de la cinemática: contenedor inferior con el estilo del dock. Solo visible mientras corre (body.pres-playing).
@@ -185,8 +213,16 @@ body.pres-playing .shotbar{opacity:1;visibility:visible;transition:opacity 400ms
 body.has-notice .toast{top:calc(var(--gap) + 52px + env(safe-area-inset-top,0px))} /* con un aviso persistente visible, el toast se apila debajo */ /* solo opacidad: sin movimiento en Y */
 
 @media (max-width:820px){
-  body,body.panel-closed{--pw:0px;--rail-w:40px;--tap:40px} /* objetivo táctil ≥ 40 px */
+  body,body.panel-closed{--pw:0px;--rail-w:40px;--tap:40px;--dev-w:0px} /* objetivo táctil ≥ 40 px */
   .dock,.shotbar{right:max(var(--gap), env(safe-area-inset-right,0px))}
+  /* Selector de modelo: píldora solo-icono, flotando justo encima del dock (a la derecha). Se oculta con el dock y mientras corre la cinemática (la línea de tiempo ocupa ese sitio) */
+  .devsw{width:auto;height:auto;right:max(var(--gap), env(safe-area-inset-right,0px));bottom:calc(2 * var(--gap) + var(--dock-h,0px) + env(safe-area-inset-bottom,0px));
+    padding:6px;display:block;border-radius:14px;transition:opacity 300ms cubic-bezier(.22,.61,.36,1),visibility 0s}
+  body.dock-hidden .devsw,body.pres-playing .devsw{transform:none;opacity:0;visibility:hidden;transition:opacity 300ms cubic-bezier(.64,0,.78,0),visibility 0s linear 300ms}
+  .dev-title{display:none}
+  .dev-opts{display:flex;gap:4px}
+  .dev-opt{position:relative;width:var(--tap);height:var(--tap);border-radius:10px}
+  .dev-opt span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} /* solo icono; el texto queda para lectores de pantalla */
   #c{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none} /* el gesto es del canvas: ni scroll ni selección de la página */
 
   /* Dock compacto: una sola fila (cifra + acciones solo icono) y tira de miniaturas con scroll horizontal */
@@ -202,7 +238,8 @@ body.has-notice .toast{top:calc(var(--gap) + 52px + env(safe-area-inset-top,0px)
   .dock .tgl{font-size:0;gap:0;width:var(--tap);height:var(--tap);padding:0;justify-content:center} /* Reemplazar: solo el interruptor */
   .strip{gap:8px;padding:4px 0 4px;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;touch-action:pan-x;scrollbar-width:none}
   .strip::-webkit-scrollbar{display:none}
-  .thumb{width:40px}
+  body{--thumb-w:40px}
+  body.dev-tablet{--thumb-w:115px}
 
   /* Rail: botones táctiles */
   .rail .btn{width:var(--rail-w);height:var(--rail-w)}

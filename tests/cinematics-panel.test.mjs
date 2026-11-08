@@ -32,7 +32,7 @@ await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, 
   const h1 = await page.evaluate(() => Math.round(document.querySelector('#shotEditor').getBoundingClientRect().height));
 
   // ── Pestaña «Global»: ritmo de toda la cinemática (antes en el panel) ──
-  await page.click('.se-tabs button:nth-child(2)'); await wait(300);
+  await page.click('.se-tabs button:nth-child(1)'); await wait(300); // Global es la primera pestaña
   const h2 = await page.evaluate(() => Math.round(document.querySelector('#shotEditor').getBoundingClientRect().height));
   eq(h2, h1, 'la card no cambia de alto entre pestañas');
   await ev('H.reset()');
@@ -52,8 +52,17 @@ await run('cinemática · panel sin Shots, sliders y X', async ({ page, ok, eq, 
   await page.click('.se-count2 button:nth-child(2)'); await wait(150);
   eq(await ev('return P.shots.halfCount'), 2, 'Count = 2');
 
-  // ── Copiar JSON sigue disponible en la card ──
-  ok(await page.evaluate(() => !!document.querySelector('#se-json')), 'botón Copiar JSON en la card');
+  // ── Ajustes de la card: Copiar JSON / Subir / Bajar ocultos; pestañas invertidas; zoom en Global; iconos por fila; preset antes de Play; icono del rail ──
+  ok(await page.evaluate(() => !document.querySelector('#se-json, #se-up, #se-down')), 'sin Copiar JSON / Subir / Bajar');
+  eq(await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].map(b => b.textContent)), ['Global', 'Toma'], 'pestañas en orden Global · Toma');
+  await page.evaluate(() => [...document.querySelectorAll('.se-tabs button')].find(b => b.textContent === 'Global').click()); await wait(200);
+  ok(await page.evaluate(() => { const z = document.querySelector('#se-g-zoom'); return !!z && z.offsetParent !== null && +z.min === 0.5 && +z.max === 4; }), 'Zoom de cámara en «Global» (0.5–4)');
+  await page.evaluate(() => { const z = document.querySelector('#se-g-zoom'); z.value = '1.5'; z.dispatchEvent(new Event('input', { bubbles: true })); z.dispatchEvent(new Event('change', { bubbles: true })); }); await wait(200);
+  eq(await page.evaluate(async () => [(await import('/js/core/params.js')).P.cam.zoom, (await import('/js/three/renderer.js')).camera.zoom]), [1.5, 1.5], 'el slider de zoom mueve P.cam.zoom y la cámara');
+  await page.evaluate(async () => { const { P } = await import('/js/core/params.js'); const { camera } = await import('/js/three/renderer.js'); P.cam.zoom = 1; camera.zoom = 1; camera.updateProjectionMatrix(); });
+  eq(await page.evaluate(() => [...document.querySelector('.se-row').querySelectorAll('.se-ri')].map(b => b.dataset.act)), ['upd', 'dup', 'ren', 'del'], 'cada fila trae actualizar · duplicar · renombrar · eliminar');
+  ok(await page.evaluate(() => document.querySelector('#se-presetSel').getBoundingClientRect().bottom <= document.querySelector('#se-play').getBoundingClientRect().top), 'el selector de presets va antes del botón de reproducir');
+  eq(await page.evaluate(() => document.querySelector('#railShots svg')?.getAttribute('class')?.includes('clapperboard')), true, 'el rail usa el icono de película (clapperboard), el mismo de Reproducir cinemática');
 
   // ── La card nunca pisa el dock (con el botón nuevo es más alta: scroll interno si no cabe) ──
   await openDock(page); await wait(300);
