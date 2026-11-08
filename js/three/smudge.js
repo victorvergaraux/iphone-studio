@@ -18,7 +18,7 @@ import { SMUDGE_MAP } from '../data/smudge-map.js';
 const smudgeTex = new THREE.TextureLoader().load(SMUDGE_MAP);
 smudgeTex.colorSpace = THREE.NoColorSpace; smudgeTex.wrapS = smudgeTex.wrapT = THREE.RepeatWrapping;
 smudgeTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-export const smudgeU = { uSmudgeR:{ value:P.phone.smudgeR }, uSmudgeM:{ value:P.phone.smudgeM }, uSmudgeH:{ value:P.phone.smudgeH } };
+export const smudgeU = { uSmudgeOn:{ value:P.phone.smudge ? 1 : 0 }, uSmudgeR:{ value:P.phone.smudgeR }, uSmudgeM:{ value:P.phone.smudgeM }, uSmudgeH:{ value:P.phone.smudgeH } };
 // Repetición isotrópica (no estira la huella) y de tamaño físico constante: en la tablet (más ancha) el mapa se repite más veces para que la huella no crezca.
 const SMUDGE_REF_W = 0.676; // ancho del panel frontal del iPhone (referencia de la escala)
 export function applySmudgeScale(){ const k = P.phone.smudgeScale / SMUDGE_REF_W; smudgeTex.repeat.set(k * FPW, k * FPH); }
@@ -26,12 +26,13 @@ applySmudgeScale();
 mGlass.roughnessMap = smudgeTex; mGlass.metalnessMap = smudgeTex;
 mGlass.onBeforeCompile = sh => {
   Object.assign(sh.uniforms, smudgeU);
-  sh.fragmentShader = 'uniform float uSmudgeR, uSmudgeM, uSmudgeH;\n' + sh.fragmentShader
+  sh.fragmentShader = 'uniform float uSmudgeOn, uSmudgeR, uSmudgeM, uSmudgeH;\n' + sh.fragmentShader
     .replace('#include <roughnessmap_fragment>', `
       float smudgeV = 0.0;
       #ifdef USE_ROUGHNESSMAP
         smudgeV = texture2D( roughnessMap, vRoughnessMapUv ).g;   // 0 limpio · 1 huella
       #endif
+      smudgeV *= uSmudgeOn;                                      // interruptor «Prints»: 0 = vidrio limpio, sin huellas
       float roughnessFactor = clamp( roughness + uSmudgeR * smudgeV, 0.0, 1.0 );`)
     .replace('#include <metalnessmap_fragment>', `
       float metalnessFactor = clamp( metalness + uSmudgeM * smudgeV, 0.0, 1.0 ); // grasa: atenúa el especular`)

@@ -13,7 +13,7 @@ export function setupCamera({ pane }){
   tLens.addBinding(P.cam, 'fov', { label:'FOV', min:8, max:60, step:0.5 }).on('change', e => { if (!camTweening) { camera.fov = e.value; camera.updateProjectionMatrix(); } });
   tLens.addBinding(P.cam, 'ease', { label:'Ease', options:CAM_EASES });
   tLens.addBinding(P.cam, 'flyDur', { label:'Fly', min:0.3, max:6, step:0.05 });
-  tLens.addBinding(P.cam, 'drift', { label:'Drift', min:0, max:4, step:0.01 });
+  tLens.addBinding(P.cam, 'drift', { label:'Drift', min:0, max:10, step:0.01 });
   tLens.addBinding(P.cam, 'driftSpeed', { label:'Rate', min:0.05, max:4, step:0.01 });
   tGrade.addBinding(P.grade, 'brightness', { label:'Bright', min:-0.3, max:0.3, step:0.005 }).on('change', e => gradePass.uniforms.uBrightness.value = e.value);
   tGrade.addBinding(P.grade, 'contrast', { label:'Contrast', min:0.6, max:1.6, step:0.01 }).on('change', e => gradePass.uniforms.uContrast.value = e.value);

@@ -101,7 +101,7 @@ export async function applyAll({ cam = true } = {}){
   setPose(P.phone.pose); prop.visible = P.phone.pose === 'lean' && P.scene.showBlocks;
   gsap.to(anchor.rotation, { y:THREE.MathUtils.degToRad(P.phone.yaw), duration:DUR, ease:EASE, overwrite:true });
   mGlass.envMapIntensity = P.phone.glass * 1.6; mGlass.roughness = P.phone.glassRough;
-  smudgeU.uSmudgeR.value = P.phone.smudgeR; smudgeU.uSmudgeM.value = P.phone.smudgeM; smudgeU.uSmudgeH.value = P.phone.smudgeH; applySmudgeScale();
+  smudgeU.uSmudgeOn.value = P.phone.smudge ? 1 : 0; smudgeU.uSmudgeR.value = P.phone.smudgeR; smudgeU.uSmudgeM.value = P.phone.smudgeM; smudgeU.uSmudgeH.value = P.phone.smudgeH; applySmudgeScale();
   mFrame.color.set(P.phone.frame); mFrame.roughness = P.metal.rough; mFrame.metalness = P.metal.metal;
   mFrame.anisotropy = P.metal.aniso; mFrame.anisotropyRotation = THREE.MathUtils.degToRad(P.metal.angle);
   rebuildShape(); makeButtons(); syncIsland(); makeBrushed();

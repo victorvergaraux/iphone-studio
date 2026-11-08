@@ -33,6 +33,7 @@ export function setupPhone({ pane }){
   tGlass.addBinding(P.phone, 'glassRough', { label:'Rough', min:0, max:0.5, step:0.005 }).on('change', e => mGlass.roughness = e.value);
   tGlass.addBlade({ view:'separator' });
   // Huellas (mapa de smudge): Smear = +roughness, Sheen = +metalness, Haze = velo lechoso, Scale = tiling
+  tGlass.addBinding(P.phone, 'smudge', { label:'Prints' }).on('change', e => smudgeU.uSmudgeOn.value = e.value ? 1 : 0); // interruptor: apaga todas las huellas
   tGlass.addBinding(P.phone, 'smudgeR', { label:'Smear', min:0, max:1, step:0.01 }).on('change', e => smudgeU.uSmudgeR.value = e.value);
   tGlass.addBinding(P.phone, 'smudgeM', { label:'Sheen', min:0, max:1, step:0.01 }).on('change', e => smudgeU.uSmudgeM.value = e.value);
   tGlass.addBinding(P.phone, 'smudgeH', { label:'Haze', min:0, max:1, step:0.01 }).on('change', e => smudgeU.uSmudgeH.value = e.value);

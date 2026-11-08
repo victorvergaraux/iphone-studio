@@ -370,6 +370,11 @@
          "btn": []
         },
         {
+         "type": "checkbox",
+         "label": "Prints",
+         "btn": []
+        },
+        {
          "type": "slider",
          "label": "Smear",
          "btn": [],
@@ -657,7 +662,7 @@
          "label": "Drift",
          "btn": [],
          "min": 0,
-         "max": 4,
+         "max": 10,
          "step": 0.01
         },
         {

@@ -152,7 +152,7 @@ export function sanitizeShot(s){
 }
 
 const camProxy = { px:0, py:0, pz:0, tx:0, ty:0, tz:0, fov:10 };
-/* Easing de cámara seleccionable. Por defecto expo.inOut: el arranque y el frenado son los más lentos de la
+/* Easing de cámara seleccionable. Por defecto «Cine» (P.cam.ease); antes expo.inOut: el arranque y el frenado son los más lentos de la
    familia (casi inmóvil en el primer/último 20 %), lo que se lee como un movimiento de grúa/dolly sin tirones. */
 export const CAM_EASES = { 'Expo':'expo.inOut', 'Quint':'power4.inOut', 'Quart':'power3.inOut', 'Sine':'sine.inOut', 'Cine':'cine' };
 // "cine": curva tipo cubic-bezier(0.7, 0, 0.3, 1) → aceleración muy gradual y pico de velocidad contenido
